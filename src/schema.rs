@@ -16,6 +16,25 @@ diesel::table! {
 }
 
 diesel::table! {
+    insights (insight_id) {
+        #[max_length = 255]
+        insight_id -> Varchar,
+        #[max_length = 255]
+        user_id -> Nullable<Varchar>,
+        #[max_length = 255]
+        insight_title -> Varchar,
+        #[max_length = 255]
+        insight_company -> Varchar,
+        #[max_length = 255]
+        insight_role -> Varchar,
+        insight_tags -> Nullable<Array<Nullable<Text>>>,
+        insight_description -> Text,
+        insight_picture_urls -> Nullable<Array<Nullable<Text>>>,
+        insight_focus_points -> Nullable<Array<Nullable<Text>>>,
+    }
+}
+
+diesel::table! {
     users (user_id) {
         #[max_length = 255]
         user_id -> Varchar,
@@ -42,8 +61,10 @@ diesel::table! {
 }
 
 diesel::joinable!(accounts -> users (user_id));
+diesel::joinable!(insights -> users (user_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     accounts,
+    insights,
     users,
 );
