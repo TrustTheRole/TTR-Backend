@@ -1,6 +1,21 @@
 // @generated automatically by Diesel CLI.
 
 diesel::table! {
+    accounts (user_id) {
+        #[max_length = 255]
+        user_id -> Varchar,
+        #[max_length = 255]
+        account_number -> Varchar,
+        #[max_length = 255]
+        ifsc -> Varchar,
+        #[max_length = 255]
+        bank_name -> Varchar,
+        #[max_length = 255]
+        upi_id -> Varchar,
+    }
+}
+
+diesel::table! {
     users (user_id) {
         #[max_length = 255]
         user_id -> Varchar,
@@ -25,3 +40,10 @@ diesel::table! {
         github -> Nullable<Varchar>,
     }
 }
+
+diesel::joinable!(accounts -> users (user_id));
+
+diesel::allow_tables_to_appear_in_same_query!(
+    accounts,
+    users,
+);
