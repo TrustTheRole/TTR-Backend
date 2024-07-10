@@ -3,7 +3,7 @@ use diesel::{deserialize::Queryable, prelude::Insertable};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Queryable, Deserialize, Insertable)]
-#[table_name = "insights"]
+#[diesel(table_name = insights)]
 pub struct Insight {
     pub insight_id: String,
     pub user_id: String,

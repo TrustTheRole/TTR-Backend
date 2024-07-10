@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use crate::utils::Role;
 
 #[derive(Debug, Serialize, Queryable, Deserialize, Insertable)]
-#[table_name = "users"]
+#[diesel(table_name = users)]
 pub struct User {
     pub user_id: String,
     pub first_name: String,
