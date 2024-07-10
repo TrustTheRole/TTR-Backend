@@ -1,8 +1,9 @@
-use std::net::SocketAddr;
+use std::{net::SocketAddr, sync::Arc};
 
 use tracing_subscriber::EnvFilter;
 use ttr::{
     config::{self},
+    db,
     routes::create_routes,
 };
 
@@ -13,6 +14,7 @@ async fn main() {
         .with_env_filter(EnvFilter::from("debug"))
         .init();
 
+    let _pool = Arc::new(db::establish_connection());
     let app = create_routes();
     let addr = SocketAddr::from(([127, 0, 0, 1], 8080));
     tracing::debug!("Server connected and listening on {}", addr);
