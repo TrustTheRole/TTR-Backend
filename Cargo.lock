@@ -1017,7 +1017,11 @@ dependencies = [
  "axum",
  "diesel",
  "dotenv",
+ "serde",
+ "serde_json",
+ "syn",
  "tokio",
+ "tower",
  "tracing",
  "tracing-subscriber",
 ]

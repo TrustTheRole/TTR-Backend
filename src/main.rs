@@ -14,8 +14,8 @@ async fn main() {
         .with_env_filter(EnvFilter::from("debug"))
         .init();
 
-    let _pool = Arc::new(db::establish_connection());
-    let app = create_routes();
+    let pool = Arc::new(db::establish_connection());
+    let app = create_routes(pool);
     let addr = SocketAddr::from(([127, 0, 0, 1], 8080));
     tracing::debug!("Server connected and listening on {}", addr);
 
