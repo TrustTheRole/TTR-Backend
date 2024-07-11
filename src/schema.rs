@@ -39,29 +39,26 @@ diesel::table! {
         #[max_length = 255]
         user_id -> Varchar,
         #[max_length = 255]
-        first_name -> Varchar,
+        password -> Varchar,
         #[max_length = 255]
-        last_name -> Varchar,
+        name -> Varchar,
         #[max_length = 50]
-        role -> Varchar,
+        role -> Nullable<Varchar>,
         #[max_length = 255]
         email -> Varchar,
         #[max_length = 255]
         alternate_email -> Nullable<Varchar>,
         #[max_length = 50]
-        phone -> Varchar,
+        phone -> Nullable<Varchar>,
         #[max_length = 255]
-        college -> Varchar,
-        graduation_year -> Int4,
+        college -> Nullable<Varchar>,
+        graduation_year -> Nullable<Int4>,
         #[max_length = 255]
         linkedin -> Nullable<Varchar>,
         #[max_length = 255]
         github -> Nullable<Varchar>,
     }
 }
-
-diesel::joinable!(accounts -> users (user_id));
-diesel::joinable!(insights -> users (user_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     accounts,
