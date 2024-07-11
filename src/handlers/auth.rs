@@ -8,7 +8,11 @@ use axum::{
 use bcrypt::DEFAULT_COST;
 use serde_json::{json, Value};
 
-use crate::{db::DbPool, models::user::User, utils::get_uid};
+use crate::{
+    db::DbPool,
+    models::user::User,
+    utils::{genrate_token, get_uid},
+};
 use crate::{
     schema::users::dsl::*,
     utils::{get_role_str, Role},
@@ -20,12 +24,23 @@ pub async fn register(
     Extension(pool): Extension<Arc<DbPool>>,
 ) -> impl IntoResponse {
     let user_email = match req.get("email") {
-        Some(user_email) => user_email.to_string(),
+        Some(u_email) => match u_email.as_str() {
+            Some(email_str) => email_str.to_string(),
+            None => {
+                return (
+                    StatusCode::BAD_REQUEST,
+                    Json(json!({
+                        "error": "Email must be a string"
+                    })),
+                )
+                    .into_response();
+            }
+        },
         None => {
             return (
-                StatusCode::EXPECTATION_FAILED,
+                StatusCode::BAD_REQUEST,
                 Json(json!({
-                    "error":"Name is required"
+                    "error": "Email is required"
                 })),
             )
                 .into_response();
@@ -33,12 +48,23 @@ pub async fn register(
     };
 
     let user_name = match req.get("name") {
-        Some(user_name) => user_name.to_string(),
+        Some(u_name) => match u_name.as_str() {
+            Some(name_str) => name_str.to_string(),
+            None => {
+                return (
+                    StatusCode::BAD_REQUEST,
+                    Json(json!({
+                        "error": "Name must be a string"
+                    })),
+                )
+                    .into_response();
+            }
+        },
         None => {
             return (
-                StatusCode::EXPECTATION_FAILED,
+                StatusCode::BAD_REQUEST,
                 Json(json!({
-                    "error":"Name is required"
+                    "error": "Name is required"
                 })),
             )
                 .into_response();
@@ -97,5 +123,35 @@ pub async fn register(
             .into_response();
     }
 
-    (StatusCode::CREATED).into_response()
+    let token = genrate_token(user_email);
+
+    if let Err(e) = token {
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({
+                "error":e.to_string(),
+            })),
+        )
+            .into_response();
+    }
+
+    // tracing::debug!("{:?}", token);
+
+    let mut response = (
+        StatusCode::CREATED,
+        Json(json!({
+            "message":"User created successfully",
+            "user":user,
+        })),
+    )
+        .into_response();
+
+    response.headers_mut().insert(
+        "Set-Cookie",
+        format!("access_token={}; HttpOnly; SameSite=Strict", token.unwrap())
+            .parse()
+            .unwrap(),
+    );
+
+    response
 }
