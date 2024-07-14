@@ -1,12 +1,7 @@
-use std::sync::Arc;
+use axum::{routing::get, Router};
 
-use axum::{routing::get, Extension, Router};
-use tower::ServiceBuilder;
+use crate::handlers::health::health_check;
 
-use crate::{db::DbPool, handlers::health::health_check};
-
-pub fn create_route(pool: Arc<DbPool>) -> Router {
-    Router::new()
-        .route("/health", get(health_check))
-        .layer(ServiceBuilder::new().layer(Extension(pool)))
+pub fn create_route() -> Router {
+    Router::new().route("/health", get(health_check))
 }
