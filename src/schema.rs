@@ -33,8 +33,6 @@ diesel::table! {
         #[max_length = 255]
         user_id -> Varchar,
         #[max_length = 255]
-        password -> Varchar,
-        #[max_length = 255]
         name -> Varchar,
         #[max_length = 50]
         role -> Nullable<Varchar>,
