@@ -148,6 +148,8 @@ pub async fn register(
         .into_response()
 }
 
-pub async fn get_user() {}
+pub async fn get_user() -> &'static str {
+    "hello"
+}
 
 pub async fn authenticate() {}
