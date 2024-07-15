@@ -6,7 +6,6 @@ use serde::{Deserialize, Serialize};
 #[diesel(table_name = users)]
 pub struct User {
     pub user_id: String,
-    pub password: String,
     pub name: String,
     pub role: Option<String>,
     pub email: String,
