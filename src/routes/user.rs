@@ -10,7 +10,7 @@ use tower::ServiceBuilder;
 use crate::{
     db::DbPool,
     handlers::user::{authenticate, get_user, register},
-    middlewares::decrypt::decrypt_data,
+    middlewares::{auth::auth_middleware, decrypt::decrypt_data},
 };
 
 pub fn create_route(pool: Arc<DbPool>) -> Router {
@@ -25,6 +25,10 @@ pub fn create_route(pool: Arc<DbPool>) -> Router {
                 )
                 .route_layer(middleware::from_fn(decrypt_data)),
         )
-        .merge(Router::new().route("/user/get_details", get(get_user)))
+        .merge(
+            Router::new()
+                .route("/user/get_details", get(get_user))
+                .route_layer(middleware::from_fn(auth_middleware)),
+        )
         .layer(ServiceBuilder::new().layer(Extension(pool)))
 }
