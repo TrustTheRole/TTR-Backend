@@ -5,7 +5,11 @@ use diesel::RunQueryDsl;
 use hyper::StatusCode;
 use serde_json::{json, Value};
 
-use crate::{db::DbPool, models::user::User, utils::get_uid};
+use crate::{
+    db::DbPool,
+    models::user::User,
+    utils::{generate_token, get_uid},
+};
 
 pub async fn register(
     Extension(decrypted_json): Extension<Value>,
@@ -81,8 +85,8 @@ pub async fn register(
 
     let user = User {
         user_id: get_uid(),
-        email: user_email.to_string(),
-        name: user_name.to_string(),
+        email: user_email.clone(),
+        name: user_name,
         alternate_email: user_alternate_email,
         college: user_college,
         github: user_github,
@@ -119,7 +123,29 @@ pub async fn register(
             .into_response();
     }
 
-    (StatusCode::ACCEPTED).into_response()
+    let token = generate_token(user_email);
+
+    if let Err(e) = token {
+        tracing::debug!("{}", e);
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({
+                "error":"Failed to generate authorization token"
+            })),
+        )
+            .into_response();
+    }
+    let token = token.unwrap();
+
+    (
+        StatusCode::CREATED,
+        Json(json!({
+            "message":"User registered successfully",
+            "user":user,
+            "token":token
+        })),
+    )
+        .into_response()
 }
 
 pub async fn get_user() {}
