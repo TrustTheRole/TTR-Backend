@@ -48,7 +48,6 @@ where
         }
     };
 
-    // println!("{:?}", private_key);
     let (parts, body) = request.into_parts();
     let bytes = match hyper::body::to_bytes(body).await {
         Ok(bytes) => bytes,
@@ -76,7 +75,6 @@ where
         }
     };
 
-    // // Now you can work with the JSON data
     let data = match json.get("encrypted_data") {
         Some(data) => data,
         None => {
@@ -147,7 +145,7 @@ where
         }
     };
 
-    println!("{}", decrypted_json);
+    tracing::debug!("{}", decrypted_json);
 
     let mut request = Request::from_parts(parts, Body::from(bytes));
     request.extensions_mut().insert(decrypted_json);
