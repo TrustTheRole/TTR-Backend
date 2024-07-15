@@ -1,15 +1,17 @@
 use std::sync::Arc;
 
-use axum::{response::IntoResponse, Extension, Json};
-use diesel::RunQueryDsl;
+use axum::{http::Request, response::IntoResponse, Extension, Json};
+use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl};
 use hyper::StatusCode;
 use serde_json::{json, Value};
 
 use crate::{
     db::DbPool,
     models::user::User,
-    utils::{generate_token, get_uid},
+    utils::{generate_token, get_uid, Claims},
 };
+
+use crate::schema::users::dsl::*;
 
 pub async fn register(
     Extension(decrypted_json): Extension<Value>,
@@ -110,9 +112,7 @@ pub async fn register(
         }
     };
 
-    let result = diesel::insert_into(crate::schema::users::dsl::users)
-        .values(&user)
-        .execute(&mut conn);
+    let result = diesel::insert_into(users).values(&user).execute(&mut conn);
     if let Err(e) = result {
         return (
             StatusCode::INTERNAL_SERVER_ERROR,
@@ -148,8 +148,196 @@ pub async fn register(
         .into_response()
 }
 
-pub async fn get_user() -> &'static str {
-    "hello"
+pub async fn get_user(
+    Extension(claim): Extension<Claims>,
+    Extension(pool): Extension<Arc<DbPool>>,
+) -> impl IntoResponse {
+    let mut conn = match pool.get() {
+        Ok(connection) => connection,
+        Err(e) => {
+            tracing::debug!("{}", e);
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error":"Database connection failed"
+                })),
+            )
+                .into_response();
+        }
+    };
+    let user_email = claim.sub;
+    let existing_user = match crate::schema::users::dsl::users
+        .filter(email.eq(&user_email))
+        .first::<User>(&mut conn)
+    {
+        Ok(e_user) => e_user,
+        Err(e) => {
+            tracing::debug!("{}", e);
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error":"Cannot find user"
+                })),
+            )
+                .into_response();
+        }
+    };
+    (
+        StatusCode::OK,
+        Json(json!({
+            "message":"User found",
+            "user":existing_user
+        })),
+    )
+        .into_response()
 }
 
-pub async fn authenticate() {}
+pub async fn check_user<B>(
+    Extension(pool): Extension<Arc<DbPool>>,
+    req: Request<B>,
+) -> impl IntoResponse {
+    let mut conn = match pool.get() {
+        Ok(connection) => connection,
+        Err(e) => {
+            tracing::debug!("{}", e);
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error":"Database connection failed"
+                })),
+            )
+                .into_response();
+        }
+    };
+    let user_email = match req.headers().get("email") {
+        Some(u_email) => u_email,
+        None => {
+            return (
+                StatusCode::EXPECTATION_FAILED,
+                Json(json!({
+                    "error":"Please provider email"
+                })),
+            )
+                .into_response();
+        }
+    };
+
+    let user_email = match user_email.to_str() {
+        Ok(u_mail) => u_mail,
+        Err(e) => {
+            tracing::debug!("{}", e);
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error":"Please provide email as string"
+                })),
+            )
+                .into_response();
+        }
+    };
+    if let Err(e) = crate::schema::users::dsl::users
+        .filter(email.eq(&user_email))
+        .first::<User>(&mut conn)
+    {
+        tracing::debug!("{}", e);
+        return (
+            StatusCode::OK,
+            Json(json!({
+                "error":"User does not exist"
+            })),
+        )
+            .into_response();
+    }
+
+    (
+        StatusCode::OK,
+        Json(json!({
+            "message":"User exists"
+        })),
+    )
+        .into_response()
+}
+
+pub async fn authenticate(
+    Extension(decrypted_json): Extension<Value>,
+    Extension(pool): Extension<Arc<DbPool>>,
+) -> impl IntoResponse {
+    let user_email = match decrypted_json.get("email") {
+        Some(u_email) => match u_email.as_str() {
+            Some(email_str) => email_str.to_string(),
+            None => {
+                return (
+                    StatusCode::BAD_REQUEST,
+                    Json(json!({
+                        "error": "Email must be a string"
+                    })),
+                )
+                    .into_response();
+            }
+        },
+        None => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(json!({
+                    "error": "Email is required"
+                })),
+            )
+                .into_response();
+        }
+    };
+
+    let mut conn = match pool.get() {
+        Ok(connection) => connection,
+        Err(e) => {
+            tracing::debug!("{}", e);
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error":"Database connection failed"
+                })),
+            )
+                .into_response();
+        }
+    };
+
+    let existing_user = match crate::schema::users::dsl::users
+        .filter(email.eq(&user_email))
+        .first::<User>(&mut conn)
+    {
+        Ok(e_user) => e_user,
+        Err(e) => {
+            tracing::debug!("{}", e);
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error":"Cannot find user"
+                })),
+            )
+                .into_response();
+        }
+    };
+
+    let token = generate_token(user_email);
+
+    if let Err(e) = token {
+        tracing::debug!("{}", e);
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({
+                "error":"Failed to generate authorization token"
+            })),
+        )
+            .into_response();
+    }
+    let token = token.unwrap();
+
+    (
+        StatusCode::OK,
+        Json(json!({
+            "message":"User authenticated successfully",
+            "user":existing_user,
+            "token":token
+        })),
+    )
+        .into_response()
+}

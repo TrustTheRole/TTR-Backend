@@ -9,7 +9,7 @@ use base64::{engine::general_purpose, Engine};
 use rsa::{pkcs1::DecodeRsaPrivateKey, Oaep, RsaPrivateKey};
 use serde_json::{json, Value};
 use sha2::Sha256;
-use std::fs;
+use std::{env, fs};
 
 pub async fn decrypt_data<B: std::fmt::Debug>(
     request: Request<B>,
@@ -19,9 +19,23 @@ where
     B: HttpBody + Send + 'static,
     B::Data: Send,
 {
-    let private_key_pem = match fs::read_to_string("private_key.pem") {
+    let key_path = match env::var("KEY_PATH") {
+        Ok(path) => path,
+        Err(e) => {
+            tracing::debug!("{}", e);
+            return Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error":"KEY_PATH not specified"
+                })),
+            )
+                .into_response());
+        }
+    };
+    let private_key_pem = match fs::read_to_string(key_path) {
         Ok(private_pem) => private_pem,
         Err(e) => {
+            tracing::debug!("{}", e);
             return Err((
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({
