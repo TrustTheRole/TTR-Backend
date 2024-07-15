@@ -11,8 +11,6 @@ use serde_json::{json, Value};
 use sha2::Sha256;
 use std::fs;
 
-type BoxError = Box<dyn std::error::Error + Send + Sync>;
-
 pub async fn decrypt_data<B: std::fmt::Debug>(
     request: Request<B>,
     next: Next<Body>,
@@ -20,7 +18,6 @@ pub async fn decrypt_data<B: std::fmt::Debug>(
 where
     B: HttpBody + Send + 'static,
     B::Data: Send,
-    B::Error: Into<BoxError>,
 {
     let private_key_pem = match fs::read_to_string("private_key.pem") {
         Ok(private_pem) => private_pem,
