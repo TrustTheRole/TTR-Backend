@@ -1,3 +1,4 @@
+diesel.toml:
 # For documentation on how to configure this file,
 # see https://diesel.rs/guides/configuring-diesel-cli
 
@@ -6,4 +7,4 @@ file = "src/schema.rs"
 custom_type_derives = ["diesel::query_builder::QueryId", "Clone"]
 
 [migrations_directory]
-dir = "/home/evilshadow/code/projects/ttr/migrations"
+dir = "E:\\ABCROLE\\TTR-Backend\\migrations"
