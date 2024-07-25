@@ -14,17 +14,17 @@ diesel::table! {
         #[max_length = 255]
         insight_id -> Varchar,
         #[max_length = 255]
-        user_id -> Nullable<Varchar>,
+        user_id -> Varchar,
         #[max_length = 255]
         insight_title -> Varchar,
         #[max_length = 255]
         insight_company -> Varchar,
         #[max_length = 255]
         insight_role -> Varchar,
-        insight_tags -> Nullable<Array<Nullable<Text>>>,
+        insight_tags -> Array<Text>,
         insight_description -> Text,
-        insight_picture_urls -> Nullable<Array<Nullable<Text>>>,
-        insight_focus_points -> Nullable<Array<Nullable<Text>>>,
+        insight_picture_urls -> Array<Text>,
+        insight_focus_points -> Array<Text>,
     }
 }
 

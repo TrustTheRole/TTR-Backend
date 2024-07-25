@@ -201,6 +201,7 @@ pub async fn create_insight(
                 .into_response();
         }
     };
+    println!("{}", claim.sub);
 
     let insight = Insight {
         insight_id: get_uid(),
@@ -235,4 +236,40 @@ pub async fn create_insight(
         })),
     )
         .into_response()
+}
+
+pub async fn get_all_insights(Extension(pool): Extension<Arc<DbPool>>) -> impl IntoResponse {
+    let mut conn = match pool.get() {
+        Ok(connection) => connection,
+        Err(e) => {
+            tracing::debug!("{}", e);
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error":"Database connection failed"
+                })),
+            )
+                .into_response();
+        }
+    };
+    let result = crate::schema::insights::dsl::insights.load::<Insight>(&mut conn);
+    if let Err(e) = result {
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({
+                "error":e.to_string(),
+            })),
+        )
+            .into_response();
+    };
+
+
+    (
+        StatusCode::OK,
+        Json(json!({
+            "insights":result.unwrap(),
+        })),
+    )
+        .into_response(
+    )
 }
