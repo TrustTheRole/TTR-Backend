@@ -140,3 +140,41 @@
   ```
 
 ************************************************************************************************
+
+### POST /insights/create
+- Create a new insight.
+
+- Request Body:
+  ```json
+  {
+    "insight_title": "The Future of AI in Healthcare",
+    "insight_company": "Tech Health Corp",
+    "insight_role": "Lead Data Scientist",
+    "insight_tags": ["AI", "Healthcare", "Innovation"],
+    "insight_description": "An in-depth analysis of how AI technologies are transforming the healthcare industry, focusing on diagnostics, treatment personalization, and operational efficiency.",
+    "insight_picture_urls": [
+      "https://example.com/images/insight1.jpg",
+      "https://example.com/images/insight2.jpg"
+    ],
+    "insight_focus_points": [
+      "AI in Diagnostics",
+      "Personalized Treatment",
+      "Operational Efficiency",
+      "Ethical Considerations"
+    ]
+  }
+  ```
+
+- Request Headers:
+  ```json
+  {
+    "Authorization": "Bearer <TOKEN>"
+  }
+  ```
+- Note: Replace `<TOKEN>` with the token received from the `/user/auth/authenticate` endpoint.
+
+
+************************************************************************************************
+
+### POST /insights/get-all
+- Get all insights.
