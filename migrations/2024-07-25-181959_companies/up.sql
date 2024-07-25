@@ -1,5 +1,5 @@
 -- Your SQL goes here
 CREATE TABLE companies (
-    id SERIAL PRIMARY KEY,
+    id VARCHAR(255) PRIMARY KEY,
     company_name VARCHAR(255) UNIQUE NOT NULL
 );

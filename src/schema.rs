@@ -2,7 +2,8 @@
 
 diesel::table! {
     colleges (id) {
-        id -> Int4,
+        #[max_length = 255]
+        id -> Varchar,
         #[max_length = 255]
         college_name -> Varchar,
         #[max_length = 255]
@@ -14,7 +15,8 @@ diesel::table! {
 
 diesel::table! {
     companies (id) {
-        id -> Int4,
+        #[max_length = 255]
+        id -> Varchar,
         #[max_length = 255]
         company_name -> Varchar,
     }
@@ -50,7 +52,8 @@ diesel::table! {
 
 diesel::table! {
     subscription (id) {
-        id -> Int4,
+        #[max_length = 255]
+        id -> Varchar,
         #[max_length = 255]
         user_id -> Varchar,
     }
