@@ -1,6 +1,26 @@
 // @generated automatically by Diesel CLI.
 
 diesel::table! {
+    colleges (id) {
+        id -> Int4,
+        #[max_length = 255]
+        college_name -> Varchar,
+        #[max_length = 255]
+        college_location -> Varchar,
+        #[max_length = 255]
+        college_state -> Varchar,
+    }
+}
+
+diesel::table! {
+    companies (id) {
+        id -> Int4,
+        #[max_length = 255]
+        company_name -> Varchar,
+    }
+}
+
+diesel::table! {
     followers (user_id, follower_id) {
         #[max_length = 255]
         user_id -> Varchar,
@@ -29,6 +49,14 @@ diesel::table! {
 }
 
 diesel::table! {
+    subscription (id) {
+        id -> Int4,
+        #[max_length = 255]
+        user_id -> Varchar,
+    }
+}
+
+diesel::table! {
     users (user_id) {
         #[max_length = 255]
         user_id -> Varchar,
@@ -52,8 +80,14 @@ diesel::table! {
     }
 }
 
+diesel::joinable!(insights -> users (user_id));
+diesel::joinable!(subscription -> users (user_id));
+
 diesel::allow_tables_to_appear_in_same_query!(
+    colleges,
+    companies,
     followers,
     insights,
+    subscription,
     users,
 );

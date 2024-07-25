@@ -9,5 +9,6 @@ CREATE TABLE insights (
     insight_description TEXT NOT NULL,
     insight_picture_urls TEXT[] NOT NULL,
     insight_focus_points TEXT[] NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES users(user_id)
+    FOREIGN KEY (user_id) REFERENCES users(user_id),
+    FOREIGN KEY (insight_company) REFERENCES companies(company_name)
 );
