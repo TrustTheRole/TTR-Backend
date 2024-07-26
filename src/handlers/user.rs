@@ -8,7 +8,7 @@ use serde_json::{json, Value};
 use crate::{
     db::DbPool,
     models::user::User,
-    utils::{generate_token, get_uid, Claims},
+    utils::{dispatch_email, generate_token, get_uid, Claims},
 };
 
 use crate::schema::users::dsl::*;
@@ -88,7 +88,7 @@ pub async fn register(
     let user = User {
         user_id: get_uid(),
         email: user_email.clone(),
-        name: user_name,
+        name: user_name.clone(),
         alternate_email: user_alternate_email,
         college: user_college,
         github: user_github,
@@ -123,7 +123,7 @@ pub async fn register(
             .into_response();
     }
 
-    let token = generate_token(user_email);
+    let token = generate_token(user_email.clone());
 
     if let Err(e) = token {
         tracing::debug!("{}", e);
@@ -136,6 +136,10 @@ pub async fn register(
             .into_response();
     }
     let token = token.unwrap();
+
+    let message="Welcome to the community".to_string();
+
+    dispatch_email(&user_name,&user_email,&message,"Welcome to the TTR Community".to_string()).await;
 
     (
         StatusCode::CREATED,

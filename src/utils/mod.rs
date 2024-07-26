@@ -1,6 +1,7 @@
 use chrono::{Duration, Utc};
 use diesel::{deserialize::FromSqlRow, expression::AsExpression, sql_types::Text};
 use jsonwebtoken::{decode, encode, errors::Error, DecodingKey, EncodingKey, Header};
+use lettre::{transport::smtp::authentication::Credentials, Message, SmtpTransport, Transport};
 use serde::{Deserialize, Serialize};
 use std::env;
 use uuid::Uuid;
@@ -56,4 +57,43 @@ pub fn validate_token(token: &str) -> Result<Claims, jsonwebtoken::errors::Error
     )?;
 
     Ok(token_data.claims)
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct EmailPayload {
+    pub fullname: String,
+    pub email: String,
+    pub message: String,
+}
+
+pub async fn dispatch_email(fullname: &str, email: &str, message: &str, email_subject: String) {
+    println!("Sending email to {}", email);
+    println!("Full Name: {}", fullname);
+
+    let from_address = "Animesh Shukla <animeshshukla1518@gmail.com>";
+    let to_address = format!("{} <{}>", fullname, email);
+    let reply_to = "Animesh Shukla <animeshshukla1518@gmail.com>";
+
+    let email = Message::builder()
+        .from(from_address.parse().expect("Invalid from address format"))
+        .reply_to(reply_to.parse().expect("Invalid reply-to address format"))
+        .to(to_address.parse().expect("Invalid to address format"))
+        .subject(email_subject)
+        .body(String::from(message))
+        .expect("Failed to build the email");
+
+    let creds = Credentials::new(
+        env::var("SMTP_USERNAME").expect("SMTP Username not specified"),
+        env::var("SMTP_PASSWORD").expect("SMTP Password not specified"),
+    );
+
+    let mailer = SmtpTransport::relay("smtp.gmail.com")
+        .unwrap()
+        .credentials(creds)
+        .build();
+
+    match mailer.send(&email) {
+        Ok(_) => println!("Email sent successfully!"),
+        Err(e) => eprintln!("Could not send email: {:?}", e),
+    }
 }

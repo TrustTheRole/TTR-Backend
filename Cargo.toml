@@ -20,6 +20,7 @@ hyper = "0.14"
 jsonwebtoken = "7.0.1"
 chrono = "0.4"
 tower-http = { version = "0.4", features = ["cors"] }
+lettre = "0.10.1"
 
 [dependencies.diesel]
 version = "2.0.0"
