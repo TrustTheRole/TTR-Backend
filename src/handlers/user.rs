@@ -85,8 +85,10 @@ pub async fn register(
         .get("role")
         .and_then(|v| v.as_str().map(|s| s.to_string()));
 
+    let _user_id=get_uid();
+
     let user = User {
-        user_id: get_uid(),
+        user_id: _user_id.clone(),
         email: user_email.clone(),
         name: user_name.clone(),
         alternate_email: user_alternate_email,
@@ -123,7 +125,7 @@ pub async fn register(
             .into_response();
     }
 
-    let token = generate_token(user_email.clone());
+    let token = generate_token(_user_id);
 
     if let Err(e) = token {
         tracing::debug!("{}", e);
@@ -321,7 +323,9 @@ pub async fn authenticate(
         }
     };
 
-    let token = generate_token(user_email);
+    tracing::debug!("existing user = {:?}", existing_user);
+
+    let token = generate_token(existing_user.user_id.clone());
 
     if let Err(e) = token {
         tracing::debug!("{}", e);
