@@ -85,7 +85,7 @@ pub async fn register(
         .get("role")
         .and_then(|v| v.as_str().map(|s| s.to_string()));
 
-    let _user_id=get_uid();
+    let _user_id = get_uid();
 
     let user = User {
         user_id: _user_id.clone(),
@@ -139,9 +139,53 @@ pub async fn register(
     }
     let token = token.unwrap();
 
-    let message="Welcome to the community".to_string();
+    let message = "Welcome to the community".to_string();
 
-    dispatch_email(&user_name,&user_email,&message,"Welcome to the TTR Community".to_string()).await;
+    let html_content = r#"
+    <body style="margin: 0; padding: 0;">
+    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+        <tr>
+            <td align="center" style="padding: 10px;">
+                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="600" style="border: 1px solid #cccccc; background-color: white;">
+                    <tr>
+                        <td align="center" style="padding: 40px 0 30px 0;">
+                            <img src="https://ik.imagekit.io/s1vtpplq4/TTR.png?updatedAt=1722362280763" alt="TTR Logo" style="display: block; width: 35%; border: 0;">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 20px; text-align: center; font-family: Arial, sans-serif; color: #333333;">
+                            <img src="https://ik.imagekit.io/s1vtpplq4/icons8-success-48.png?updatedAt=1722362334334" alt="Success Icon" style="display: inline-block;">
+                            <h1 style="color: green; font-size: 24px; margin-left: 10px; display: inline-block;">You are successfully registered</h1>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 20px; text-align: center; font-family: Arial, sans-serif; color: #333333;">
+                            <p style="font-size: 16px; margin: 0;">
+                                Welcome to #TTR! You're now part of our interview-savvy community. Ready for more insider tips? Subscribe to our newsletter and stay ahead of the curve. Your career journey just got a serious upgrade!
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td align="center" style="padding: 20px;">
+                            <a href="https://ttr.gridsphere.io" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">SUBSCRIBE</a>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+
+    "#;
+
+    dispatch_email(
+        &user_name,
+        &user_email,
+        &message,
+        "Welcome to the TTR Community".to_string(),
+        &html_content,
+    )
+    .await;
 
     (
         StatusCode::CREATED,

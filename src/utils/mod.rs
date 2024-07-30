@@ -59,14 +59,7 @@ pub fn validate_token(token: &str) -> Result<Claims, jsonwebtoken::errors::Error
     Ok(token_data.claims)
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct EmailPayload {
-    pub fullname: String,
-    pub email: String,
-    pub message: String,
-}
-
-pub async fn dispatch_email(fullname: &str, email: &str, message: &str, email_subject: String) {
+pub async fn dispatch_email(fullname: &str, email: &str, message: &str, email_subject: String, html_content: &str) {
     println!("Sending email to {}", email);
     println!("Full Name: {}", fullname);
 
@@ -79,7 +72,10 @@ pub async fn dispatch_email(fullname: &str, email: &str, message: &str, email_su
         .reply_to(reply_to.parse().expect("Invalid reply-to address format"))
         .to(to_address.parse().expect("Invalid to address format"))
         .subject(email_subject)
-        .body(String::from(message))
+        .multipart(lettre::message::MultiPart::alternative_plain_html(
+            message.to_string(),
+            html_content.to_string(),
+        ))
         .expect("Failed to build the email");
 
     let creds = Credentials::new(
