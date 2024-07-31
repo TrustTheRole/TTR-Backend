@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::schema::colleges;
 
-#[derive(Serialize, Deserialize, Debug, Insertable, Queryable)]
+#[derive(Debug, Serialize, Queryable, Deserialize, Insertable)]
 #[diesel(table_name=colleges)]
 pub struct College{
     pub id:String,

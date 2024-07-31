@@ -1,6 +1,7 @@
 pub mod health;
 pub mod insights;
 pub mod user;
+pub mod misc;
 
 use axum::Router;
 use std::sync::Arc;
@@ -17,5 +18,6 @@ pub fn create_routes(pool: Arc<DbPool>) -> Router {
         .merge(health::create_route())
         .merge(user::create_route(pool.clone()))
         .merge(insights::create_route(pool.clone()))
+        .merge(misc::create_route(pool.clone()))
         .layer(cors)
 }
