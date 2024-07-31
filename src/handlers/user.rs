@@ -142,7 +142,7 @@ pub async fn register(
     let message = "Welcome to the community".to_string();
 
     let html_content = r#"
-    <body style="margin: 0; padding: 0;">
+    <body style="margin: 0; padding: 0; background-color: #f4f4f4;">
     <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
         <tr>
             <td align="center" style="padding: 10px;">
@@ -154,8 +154,16 @@ pub async fn register(
                     </tr>
                     <tr>
                         <td style="padding: 20px; text-align: center; font-family: Arial, sans-serif; color: #333333;">
-                            <img src="https://ik.imagekit.io/s1vtpplq4/icons8-success-48.png?updatedAt=1722362334334" alt="Success Icon" style="display: inline-block;">
-                            <h1 style="color: green; font-size: 24px; margin-left: 10px; display: inline-block;">You are successfully registered</h1>
+                            <table role="presentation" border="0" cellpadding="0" cellspacing="0" align="center">
+                                <tr>
+                                    <td style="vertical-align: middle;">
+                                        <img src="https://ik.imagekit.io/s1vtpplq4/icons8-success-48.png?updatedAt=1722362334334" alt="Success Icon" style="display: block;">
+                                    </td>
+                                    <td style="vertical-align: middle; padding-left: 10px;">
+                                        <h1 style="color: green; font-size: 24px; margin: 0;">You are successfully registered.</h1>
+                                    </td>
+                                </tr>
+                            </table>
                         </td>
                     </tr>
                     <tr>
@@ -167,7 +175,7 @@ pub async fn register(
                     </tr>
                     <tr>
                         <td align="center" style="padding: 20px;">
-                            <a href="https://ttr.gridsphere.io" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">SUBSCRIBE</a>
+                            <a href="https://ttr.gridsphere.io" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; font-family: Arial, sans-serif;">SUBSCRIBE</a>
                         </td>
                     </tr>
                 </table>
@@ -175,6 +183,7 @@ pub async fn register(
         </tr>
     </table>
 </body>
+
 
     "#;
 
