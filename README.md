@@ -178,3 +178,41 @@
 
 ### POST /insights/get-all
 - Get all insights.
+
+### POST /misc/add-college
+- Add a new college.
+
+- Request Headers:
+  ```json
+  {
+    "Authorization": "Bearer <TOKEN>"
+  }
+  ```
+
+- Request Body:
+  ```json
+  {
+    "college_name": "University of Example",
+    "college_location": "Example City",
+    "college_state": "State of the college"
+  }
+  ```
+  ************************************************************************************************
+
+  ### POST /misc/add-comapny
+  - Add a new company.
+
+  - Request Headers:
+    ```json
+    {
+      "Authorization": "Bearer <TOKEN>"
+    }
+    ```
+
+  - Request Body:
+    ```json
+    {
+      "company_name": "Comapny Name"
+    }
+    ```
+    ************************************************************************************************
