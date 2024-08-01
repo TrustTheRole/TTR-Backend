@@ -179,6 +179,8 @@
 ### POST /insights/get-all
 - Get all insights.
 
+************************************************************************************************
+
 ### POST /misc/add-college
 - Add a new college.
 
@@ -197,7 +199,8 @@
     "college_state": "State of the college"
   }
   ```
-  ************************************************************************************************
+- Note: Replace `<TOKEN>` with the token received from the `/user/auth/authenticate` endpoint.
+************************************************************************************************
 
   ### POST /misc/add-comapny
   - Add a new company.
@@ -215,4 +218,5 @@
       "company_name": "Comapny Name"
     }
     ```
-    ************************************************************************************************
+- Note: Replace `<TOKEN>` with the token received from the `/user/auth/authenticate` endpoint.
+************************************************************************************************
