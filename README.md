@@ -182,6 +182,30 @@
 
 ************************************************************************************************
 
+### POST /insights/get-recent-insights
+- Get recent insights.
+
+in query params:
+- `limit`: Number of insights to return. (default: 5)
+
+************************************************************************************************
+
+### POST /insights/delete-insight
+- Delete an insight.
+
+in query params:
+- `insight_id`: ID of the insight to delete.
+
+- Request Headers:
+  ```json
+  {
+    "Authorization":"Bearer <TOKEN>"
+  }
+  ```
+- Note: Replace `<TOKEN>` with the token received from the `/user/auth/authenticate` endpoint.
+
+************************************************************************************************
+
 ### POST /misc/add-college
 - Add a new college.
 
@@ -220,4 +244,32 @@
     }
     ```
 - Note: Replace `<TOKEN>` with the token received from the `/user/auth/authenticate` endpoint.
+************************************************************************************************
+
+### POST /misc/subscribe-newsletter
+- Subscribe to the newsletter.
+
+- Request Body:
+  ```json
+  {
+    "email": "johndoe@example.com"
+  }
+  ```
+************************************************************************************************
+
+### POST /misc/get-newsletter-subs
+- Get all newsletter subscribers.
+
+- Request Headers:
+  ```json
+  {
+    "Authorization":"Bearer <TOKEN>"
+  }
+  ```
+- Note: Replace `<TOKEN>` with the token received from the `/user/auth/authenticate` endpoint.
+************************************************************************************************
+
+### POST /misc/get-tags
+- Get all tags.
+
 ************************************************************************************************
