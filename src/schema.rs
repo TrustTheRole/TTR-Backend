@@ -52,6 +52,14 @@ diesel::table! {
 }
 
 diesel::table! {
+    newsletter_sub (email) {
+        #[max_length = 255]
+        email -> Varchar,
+        created_at -> Timestamp,
+    }
+}
+
+diesel::table! {
     subscription (id) {
         #[max_length = 255]
         id -> Varchar,
@@ -91,6 +99,7 @@ diesel::allow_tables_to_appear_in_same_query!(
     companies,
     followers,
     insights,
+    newsletter_sub,
     subscription,
     users,
 );
