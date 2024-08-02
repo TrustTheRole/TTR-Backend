@@ -8,7 +8,7 @@ use std::sync::Arc;
 use crate::{
     db::DbPool,
     models::insights::Insight,
-    utils::{get_uid, Claims},
+    utils::{extract_tags, get_uid, Claims},
 };
 
 pub async fn create_insight(
@@ -189,6 +189,8 @@ pub async fn create_insight(
     println!("{:?}", _insight_focus_points);
     println!("{:?}", _insight_tags);
 
+    
+
     let mut conn = match pool.get() {
         Ok(connection) => connection,
         Err(e) => {
@@ -203,6 +205,8 @@ pub async fn create_insight(
         }
     };
     println!("{}", claim.sub);
+
+    extract_tags(&_insight_tags,&mut conn);
 
     let insight = Insight {
         insight_id: get_uid(),

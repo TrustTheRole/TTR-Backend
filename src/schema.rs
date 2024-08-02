@@ -69,6 +69,14 @@ diesel::table! {
 }
 
 diesel::table! {
+    tags (name) {
+        #[max_length = 255]
+        name -> Varchar,
+        created_at -> Timestamp,
+    }
+}
+
+diesel::table! {
     users (user_id) {
         #[max_length = 255]
         user_id -> Varchar,
@@ -101,5 +109,6 @@ diesel::allow_tables_to_appear_in_same_query!(
     insights,
     newsletter_sub,
     subscription,
+    tags,
     users,
 );

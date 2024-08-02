@@ -1,10 +1,12 @@
 use chrono::{Duration, Utc};
-use diesel::{deserialize::FromSqlRow, expression::AsExpression, sql_types::Text};
+use diesel::{deserialize::FromSqlRow, expression::AsExpression, query_dsl::methods::FilterDsl, r2d2::{ConnectionManager, PooledConnection}, sql_types::Text, ExpressionMethods, PgConnection, RunQueryDsl};
 use jsonwebtoken::{decode, encode, errors::Error, DecodingKey, EncodingKey, Header};
 use lettre::{transport::smtp::authentication::Credentials, Message, SmtpTransport, Transport};
 use serde::{Deserialize, Serialize};
 use std::env;
 use uuid::Uuid;
+
+use crate::models::tag::Tag;
 
 #[derive(Debug, Serialize, Deserialize, AsExpression, FromSqlRow)]
 #[diesel(sql_type = Text)]
@@ -97,4 +99,27 @@ pub async fn dispatch_email(fullname: &str, email: &str, message: &str, email_su
         Ok(_) => println!("Email sent successfully!"),
         Err(e) => eprintln!("Could not send email: {:?}", e),
     }
+}
+
+pub fn extract_tags(tags:&Vec<String>,conn:&mut PooledConnection<ConnectionManager<PgConnection>>){
+
+    for tag in tags{
+        let tag_exists = crate::schema::tags::dsl::tags
+            .filter(crate::schema::tags::dsl::name.eq(tag))
+            .first::<Tag>(conn)
+            .is_ok();
+
+        if !tag_exists {
+            let new_tag = Tag {
+                name: tag.to_string(),
+                created_at: chrono::Utc::now().naive_utc(),
+            };
+
+            diesel::insert_into(crate::schema::tags::dsl::tags)
+                .values(&new_tag)
+                .execute(conn)
+                .expect("Failed to insert tag into database");
+        }
+    }
+
 }
