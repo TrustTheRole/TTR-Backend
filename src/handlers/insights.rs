@@ -1,6 +1,7 @@
-use axum::{response::IntoResponse, Extension, Json};
-use diesel::RunQueryDsl;
+use axum::{extract::Query, response::IntoResponse, Extension, Json};
+use diesel::{query_dsl::methods::{LimitDsl, OrderDsl}, ExpressionMethods, RunQueryDsl};
 use hyper::StatusCode;
+use serde::Deserialize;
 use serde_json::{json, Value};
 use std::sync::Arc;
 
@@ -273,4 +274,51 @@ pub async fn get_all_insights(Extension(pool): Extension<Arc<DbPool>>) -> impl I
     )
         .into_response(
     )
+}
+
+#[derive(Deserialize)]
+pub struct InsightsQuery {
+    pub limit: Option<usize>,
+}
+
+pub async fn get_recent_insights(Extension(pool): Extension<Arc<DbPool>>,Query(query): Query<InsightsQuery>,)->impl IntoResponse{
+    let limit = query.limit.unwrap_or(5);
+
+    let mut conn = match pool.get() {
+        Ok(connection) => connection,
+        Err(e) => {
+            tracing::debug!("{}", e);
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error":"Database connection failed"
+                })),
+            )
+                .into_response();
+        }
+    };
+
+    let result = crate::schema::insights::dsl::insights
+        .order(crate::schema::insights::dsl::created_at.desc())
+        .limit(limit as i64)
+        .load::<Insight>(&mut conn);
+
+    if let Err(e) = result {
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({
+                "error":e.to_string(),
+            })),
+        )
+            .into_response();
+    };
+
+    (
+        StatusCode::OK,
+        Json(json!({
+            "insights":result.unwrap(),
+        })),
+
+    )
+        .into_response()
 }
