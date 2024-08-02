@@ -311,3 +311,37 @@ pub async fn get_newsletter_subscibers(
         }))
     ).into_response()
 }
+
+
+pub async fn get_all_tags(Extension(pool):Extension<Arc<DbPool>>)->impl IntoResponse{
+    let mut conn = match pool.get(){
+        Ok(conn)=>conn,
+        Err(e)=>{
+            tracing::debug!("{:?}",e);
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error":"Database connection failed"
+                }))
+            ).into_response();
+        }
+    };
+    
+    
+    let tags = crate::schema::tags::dsl::tags.load::<crate::models::tag::Tag>(&mut conn);
+    if let Err(e) = tags{
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({
+                "error":e.to_string()
+            }))
+        ).into_response();
+    }
+    (
+        StatusCode::OK,
+        Json(json!({
+            "tags":tags.unwrap()
+        }))
+    ).into_response()
+
+}
