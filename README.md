@@ -25,6 +25,7 @@
       "phone": "+1-555-123-4567",
       "college": "University of Example",
       "graduation_year": 2022,
+      "gender":"FEMALE",
       "linkedin": "https://www.linkedin.com/in/johndoe",
       "github": "https://github.com/johndoe"
     }
