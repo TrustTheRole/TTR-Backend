@@ -1,5 +1,5 @@
 use axum::{extract::Query, response::IntoResponse, Extension, Json};
-use diesel::{query_dsl::methods::{LimitDsl, OrderDsl}, ExpressionMethods, RunQueryDsl};
+use diesel::{query_dsl::methods::{FilterDsl, LimitDsl, OrderDsl}, ExpressionMethods, RunQueryDsl};
 use hyper::StatusCode;
 use serde::Deserialize;
 use serde_json::{json, Value};
@@ -325,4 +325,69 @@ pub async fn get_recent_insights(Extension(pool): Extension<Arc<DbPool>>,Query(q
 
     )
         .into_response()
+}
+
+
+pub async fn delete_insight(Extension(pool): Extension<Arc<DbPool>>,Query(query): Query<Value>,)->impl IntoResponse{
+    
+    let insight_id = match query.get("insight_id") {
+        Some(i_id) => match i_id.as_str() {
+            Some(id_str) => id_str.to_string(),
+            None => {
+                return (
+                    StatusCode::BAD_REQUEST,
+                    Json(json!({
+                        "error":"Insight ID must be a string"
+                    })),
+                )
+                    .into_response();
+            }
+        },
+        None => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(json!({
+                    "error":"Insight ID is required"
+                })),
+            )
+                .into_response();
+        }
+    };
+
+    let mut conn = match pool.get() {
+        Ok(connection) => connection,
+        Err(e) => {
+            tracing::debug!("{}", e);
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error":"Database connection failed"
+                })),
+            )
+                .into_response();
+        }
+    };
+
+    let result = diesel::delete(crate::schema::insights::dsl::insights.filter(crate::schema::insights::dsl::insight_id.eq(insight_id)))
+        .execute(&mut conn);
+
+    if let Err(e) = result {
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({
+                "error":e.to_string(),
+            })),
+        )
+            .into_response();
+    };
+
+    (
+        StatusCode::OK,
+        Json(json!({
+            "message":"Insight deleted successfully",
+        })),
+
+    )
+        .into_response()
+    
 }
