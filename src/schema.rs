@@ -47,6 +47,7 @@ diesel::table! {
         insight_description -> Text,
         insight_picture_urls -> Array<Text>,
         insight_focus_points -> Array<Text>,
+        created_at -> Timestamp,
     }
 }
 
@@ -80,11 +81,10 @@ diesel::table! {
         linkedin -> Nullable<Varchar>,
         #[max_length = 255]
         github -> Nullable<Varchar>,
+        #[max_length = 50]
+        gender -> Varchar,
     }
 }
-
-diesel::joinable!(insights -> users (user_id));
-diesel::joinable!(subscription -> users (user_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     colleges,

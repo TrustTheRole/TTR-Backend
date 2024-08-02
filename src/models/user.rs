@@ -15,4 +15,5 @@ pub struct User {
     pub graduation_year: Option<i32>,
     pub linkedin: Option<String>,
     pub github: Option<String>,
+    pub gender: String,
 }

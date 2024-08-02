@@ -213,6 +213,7 @@ pub async fn create_insight(
         insight_picture_urls: _insight_picture_urls,
         insight_role: _insight_role,
         insight_tags: _insight_tags,
+        created_at: chrono::Utc::now().naive_utc(),
     };
 
     let result = diesel::insert_into(crate::schema::insights::dsl::insights)

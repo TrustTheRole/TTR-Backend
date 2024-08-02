@@ -10,5 +10,6 @@ CREATE TABLE users (
     graduation_year INT,
     linkedin VARCHAR(255),
     github VARCHAR(255),
+    gender VARCHAR(50) NOT NULL,
     FOREIGN KEY (college) REFERENCES colleges(college_name)
 );

@@ -63,6 +63,40 @@ pub async fn register(
                 .into_response();
         }
     };
+    let user_gender = match decrypted_json.get("gender") {
+        Some(u_gender) => match u_gender.as_str() {
+            Some(gender_str) => gender_str.to_string(),
+            None => {
+                return (
+                    StatusCode::BAD_REQUEST,
+                    Json(json!({
+                        "error": "Gender must be a string"
+                    })),
+                )
+                    .into_response();
+            }
+        },
+        None => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(json!({
+                    "error": "Gender is required"
+                })),
+            )
+                .into_response();
+        }
+    };
+
+    if user_gender!="MALE".to_string() && user_gender!="FEMALE".to_string() {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({
+                "error":"Gender can only be MALE or FEMALE"
+            }))
+        ).into_response();
+    }
+
+
     let user_alternate_email = decrypted_json
         .get("alternate_email")
         .and_then(|v| v.as_str().map(|s| s.to_string()));
@@ -97,6 +131,7 @@ pub async fn register(
         linkedin: user_linkedin,
         graduation_year: user_graduation_year,
         phone: user_phone,
+        gender: user_gender,
         role: user_role,
     };
 

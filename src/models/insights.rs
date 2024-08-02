@@ -1,6 +1,7 @@
 use crate::schema::insights;
 use diesel::{deserialize::Queryable, prelude::Insertable};
 use serde::{Deserialize, Serialize};
+use chrono::NaiveDateTime;
 
 #[derive(Debug, Serialize, Queryable, Deserialize, Insertable)]
 #[diesel(table_name = insights)]
@@ -14,4 +15,5 @@ pub struct Insight {
     pub insight_description: String,
     pub insight_picture_urls: Vec<String>,
     pub insight_focus_points: Vec<String>,
+    pub created_at: NaiveDateTime,
 }
