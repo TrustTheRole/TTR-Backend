@@ -9,7 +9,8 @@ use axum::{
 use crate::{
     db::DbPool,
     handlers::misc::{
-        add_college_name, add_company_name, get_all_tags, get_newsletter_subscibers, subscibe_to_newsletter
+        add_college_name, add_company_name, get_all_tags, get_colleges, get_newsletter_subscibers,
+        subscibe_to_newsletter,
     },
     middlewares::auth::auth_middleware,
 };
@@ -29,7 +30,8 @@ pub fn create_route(pool: Arc<DbPool>) -> Router {
                 .merge(
                     Router::new()
                         .route("/subscribe-newsletter", post(subscibe_to_newsletter))
-                        .route("/get-tags", get(get_all_tags)),
+                        .route("/get-tags", get(get_all_tags))
+                        .route("/get-colleges", get(get_colleges)),
                 ),
         )
         .layer(Extension(pool))

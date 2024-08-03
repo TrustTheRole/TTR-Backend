@@ -6,9 +6,7 @@ use hyper::StatusCode;
 use serde_json::{json, Value};
 
 use crate::{
-    db::DbPool,
-    models::misc::{colleges::College, companies::Companies, newsletter_sub::Newsletter},
-    utils::get_uid,
+    db::DbPool, models::misc::{colleges::College, companies::Companies, newsletter_sub::Newsletter}, utils::get_uid
 };
 
 pub async fn add_college_name(
@@ -344,4 +342,36 @@ pub async fn get_all_tags(Extension(pool):Extension<Arc<DbPool>>)->impl IntoResp
         }))
     ).into_response()
 
+}
+
+pub async fn get_colleges(Extension(pool):Extension<Arc<DbPool>>)->impl IntoResponse{
+    let mut conn = match pool.get(){
+        Ok(conn)=>conn,
+        Err(e)=>{
+            tracing::debug!("{:?}",e);
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error":"Database connection failed"
+                }))
+            ).into_response();
+        }
+    };
+    
+    
+    let colleges = crate::schema::colleges::dsl::colleges.load::<crate::models::misc::colleges::College>(&mut conn);
+    if let Err(e) = colleges{
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({
+                "error":e.to_string()
+            }))
+        ).into_response();
+    }
+    (
+        StatusCode::OK,
+        Json(json!({
+            "colleges":colleges.unwrap()
+        }))
+    ).into_response()
 }
