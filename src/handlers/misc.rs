@@ -6,7 +6,9 @@ use hyper::StatusCode;
 use serde_json::{json, Value};
 
 use crate::{
-    db::DbPool, models::misc::{colleges::College, companies::Companies, newsletter_sub::Newsletter}, utils::get_uid
+    db::DbPool,
+    models::misc::{colleges::College, companies::Companies, newsletter_sub::Newsletter},
+    utils::get_uid,
 };
 
 pub async fn add_college_name(
@@ -134,7 +136,7 @@ pub async fn add_company_name(
     Json(req): Json<Value>,
     Extension(pool): Extension<Arc<DbPool>>,
 ) -> impl IntoResponse {
-    let _comapny_name = match req.get("company_name") {
+    let _company_name = match req.get("company_name") {
         Some(c_name) => match c_name.as_str() {
             Some(name_str) => name_str.to_string(),
             None => {
@@ -160,7 +162,7 @@ pub async fn add_company_name(
 
     let _company = Companies {
         id: get_uid(),
-        company_name: _comapny_name,
+        company_name: _company_name,
     };
 
     let mut conn = match pool.get() {
@@ -278,19 +280,21 @@ pub async fn get_newsletter_subscibers(
     Extension(pool): Extension<Arc<DbPool>>,
 ) -> impl IntoResponse {
     let mut conn = match pool.get() {
-        Ok(conn)=>conn,
-        Err(e)=>{
-            tracing::debug!("{:?}",e);
+        Ok(conn) => conn,
+        Err(e) => {
+            tracing::debug!("{:?}", e);
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({
                     "error":"Database connection failed"
-                }))
-            ).into_response();
+                })),
+            )
+                .into_response();
         }
     };
 
-    let subscibed_users = crate::schema::newsletter_sub::dsl::newsletter_sub.load::<Newsletter>(&mut conn);
+    let subscibed_users =
+        crate::schema::newsletter_sub::dsl::newsletter_sub.load::<Newsletter>(&mut conn);
 
     if let Err(e) = subscibed_users {
         return (
@@ -306,72 +310,76 @@ pub async fn get_newsletter_subscibers(
         Json(json!({
             "message":"Subscibers fetched successfully",
             "subscibers":subscibed_users.unwrap()
-        }))
-    ).into_response()
+        })),
+    )
+        .into_response()
 }
 
-
-pub async fn get_all_tags(Extension(pool):Extension<Arc<DbPool>>)->impl IntoResponse{
-    let mut conn = match pool.get(){
-        Ok(conn)=>conn,
-        Err(e)=>{
-            tracing::debug!("{:?}",e);
+pub async fn get_all_tags(Extension(pool): Extension<Arc<DbPool>>) -> impl IntoResponse {
+    let mut conn = match pool.get() {
+        Ok(conn) => conn,
+        Err(e) => {
+            tracing::debug!("{:?}", e);
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({
                     "error":"Database connection failed"
-                }))
-            ).into_response();
+                })),
+            )
+                .into_response();
         }
     };
-    
-    
+
     let tags = crate::schema::tags::dsl::tags.load::<crate::models::tag::Tag>(&mut conn);
-    if let Err(e) = tags{
+    if let Err(e) = tags {
         return (
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(json!({
                 "error":e.to_string()
-            }))
-        ).into_response();
+            })),
+        )
+            .into_response();
     }
     (
         StatusCode::OK,
         Json(json!({
             "tags":tags.unwrap()
-        }))
-    ).into_response()
-
+        })),
+    )
+        .into_response()
 }
 
-pub async fn get_colleges(Extension(pool):Extension<Arc<DbPool>>)->impl IntoResponse{
-    let mut conn = match pool.get(){
-        Ok(conn)=>conn,
-        Err(e)=>{
-            tracing::debug!("{:?}",e);
+pub async fn get_colleges(Extension(pool): Extension<Arc<DbPool>>) -> impl IntoResponse {
+    let mut conn = match pool.get() {
+        Ok(conn) => conn,
+        Err(e) => {
+            tracing::debug!("{:?}", e);
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({
                     "error":"Database connection failed"
-                }))
-            ).into_response();
+                })),
+            )
+                .into_response();
         }
     };
-    
-    
-    let colleges = crate::schema::colleges::dsl::colleges.load::<crate::models::misc::colleges::College>(&mut conn);
-    if let Err(e) = colleges{
+
+    let colleges = crate::schema::colleges::dsl::colleges
+        .load::<crate::models::misc::colleges::College>(&mut conn);
+    if let Err(e) = colleges {
         return (
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(json!({
                 "error":e.to_string()
-            }))
-        ).into_response();
+            })),
+        )
+            .into_response();
     }
     (
         StatusCode::OK,
         Json(json!({
             "colleges":colleges.unwrap()
-        }))
-    ).into_response()
+        })),
+    )
+        .into_response()
 }
