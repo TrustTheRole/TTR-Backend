@@ -6,7 +6,7 @@ use crate::schema::newsletter_sub;
 
 #[derive(Debug, Serialize, Queryable, Deserialize, Insertable)]
 #[diesel(table_name = newsletter_sub)]
-pub struct Newsletter {
+pub struct NewsletterSub {
     pub email: String,
     pub created_at: NaiveDateTime,
 }

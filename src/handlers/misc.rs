@@ -2,13 +2,16 @@ use std::sync::Arc;
 
 use axum::{response::IntoResponse, Extension, Json};
 use diesel::RunQueryDsl;
+use futures::future::join_all;
 use hyper::StatusCode;
 use serde_json::{json, Value};
 
 use crate::{
     db::DbPool,
-    models::misc::{colleges::College, companies::Companies, newsletter_sub::Newsletter},
-    utils::get_uid,
+    models::
+        misc::{colleges::College, companies::Companies, newsletter_sub::NewsletterSub}
+    ,
+    utils::{dispatch_email, get_uid},
 };
 
 pub async fn add_college_name(
@@ -248,7 +251,7 @@ pub async fn subscibe_to_newsletter(
         }
     };
 
-    let newsletter = Newsletter {
+    let newsletter = NewsletterSub {
         email: _user_email,
         created_at: chrono::Utc::now().naive_utc(),
     };
@@ -294,7 +297,7 @@ pub async fn get_newsletter_subscibers(
     };
 
     let subscibed_users =
-        crate::schema::newsletter_sub::dsl::newsletter_sub.load::<Newsletter>(&mut conn);
+        crate::schema::newsletter_sub::dsl::newsletter_sub.load::<NewsletterSub>(&mut conn);
 
     if let Err(e) = subscibed_users {
         return (
@@ -379,6 +382,171 @@ pub async fn get_colleges(Extension(pool): Extension<Arc<DbPool>>) -> impl IntoR
         StatusCode::OK,
         Json(json!({
             "colleges":colleges.unwrap()
+        })),
+    )
+        .into_response()
+}
+
+pub async fn send_newsletter(
+    Json(req): Json<Value>,
+    Extension(pool): Extension<Arc<DbPool>>,
+) -> impl IntoResponse {
+    let _newsletter_title = match req.get("newsletter_title") {
+        Some(title) => match title.as_str() {
+            Some(title_str) => title_str.to_string(),
+            None => {
+                return (
+                    StatusCode::BAD_REQUEST,
+                    Json(json!({
+                        "error":"Title must be a string"
+                    })),
+                )
+                    .into_response();
+            }
+        },
+        None => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(json!({
+                    "error":"Title is required"
+                })),
+            )
+                .into_response();
+        }
+    };
+
+
+    let _title = match req.get("title") {
+        Some(title) => match title.as_str() {
+            Some(title_str) => title_str.to_string(),
+            None => {
+                return (
+                    StatusCode::BAD_REQUEST,
+                    Json(json!({
+                        "error":"Title must be a string"
+                    })),
+                )
+                    .into_response();
+            }
+        },
+        None => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(json!({
+                    "error":"Title is required"
+                })),
+            )
+                .into_response();
+        }
+    };
+
+    let _content = match req.get("content") {
+        Some(content) => match content.as_str() {
+            Some(content_str) => content_str.to_string(),
+            None => {
+                return (
+                    StatusCode::BAD_REQUEST,
+                    Json(json!({
+                        "error":"Content must be a string"
+                    })),
+                )
+                    .into_response();
+            }
+        },
+        None => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(json!({
+                    "error":"Content is required"
+                })),
+            )
+                .into_response();
+        }
+    };
+
+    let mut conn = match pool.get() {
+        Ok(conn) => conn,
+        Err(e) => {
+            tracing::debug!("{:?}", e);
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error":"Database connection failed"
+                })),
+            )
+                .into_response();
+        }
+    };
+
+    let subscribers = crate::schema::newsletter_sub::dsl::newsletter_sub
+        .load::<crate::models::misc::newsletter_sub::NewsletterSub>(&mut conn);
+
+    if let Err(e) = subscribers {
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({
+                "error":e.to_string()
+            })),
+        )
+            .into_response();
+    }
+    let subscribers: Vec<NewsletterSub> = subscribers.unwrap();
+
+    let html_content = format!(
+        r#"
+        <div style="width: 80%; margin: auto; background-color: #ffffff; padding: 20px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);">
+    <div style="background-color: #4CAF50; color: white; padding: 10px 0; text-align: center; border-radius: 6px;">
+        <h1>{}</h1>
+    </div>
+    <div style="margin: 20px 0;">
+        <p>
+            Hey there,
+        </p>
+        <p>
+            Welcome to our monthly newsletter! We are excited to share the latest updates and insights with you.
+        </p>
+        <h2>{}</h2>
+        <p>
+            {}
+        </p>
+        <p>
+            Thank you for being a part of our community.
+        </p>
+    </div>
+    <div style="text-align: center; padding: 10px 0; background-color: #f1f1f1;">
+        <p>
+            © 2024 TTR. All rights reserved.
+        </p>
+    </div>
+</div>
+        "#,_newsletter_title,_title,_content
+    );
+
+    let message = "Hey there! We are excited to share the latest updates and insights with you.".to_string();
+
+    let subject = "Welcome to our monthly newsletter!".to_string();
+
+    // dispatch mail in batches of 10
+
+    for chunk in subscribers.chunks(10) {
+        let mut futures = vec![];
+        for subscriber in chunk {
+            futures.push(dispatch_email(
+                "User",
+                &subscriber.email,
+                &message,
+                subject.clone(),
+                &html_content,
+            ));
+        }
+        // Send emails concurrently within the batch
+        let _results = join_all(futures).await;
+    }
+
+    (
+        StatusCode::OK,
+        Json(json!({
+            "message":"Newsletter sent successfully"
         })),
     )
         .into_response()

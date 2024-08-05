@@ -68,10 +68,12 @@ pub async fn dispatch_email(fullname: &str, email: &str, message: &str, email_su
     let admin_email = env::var("SMTP_USERNAME").expect("SMTP_USERNAME not specified");
     let admin_name = env::var("ADMIN_NAME").expect("ADMIN_NAME not specified");
 
-    // let from_address = "Animesh Shukla <animeshshukla1518@gmail.com>";
+
     let from_address = format!("{} <{}>", admin_name, admin_email);
     let to_address = format!("{} <{}>", fullname, email);
-    // let reply_to = "Animesh Shukla <animeshshukla1518@gmail.com>";
+    
+    
+    
     let reply_to = format!("{} <{}>", admin_name, admin_email);
 
     let email = Message::builder()
