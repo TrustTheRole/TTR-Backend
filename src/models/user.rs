@@ -1,4 +1,5 @@
 use crate::schema::users;
+use diesel::AsChangeset;
 use diesel::{deserialize::Queryable, prelude::Insertable};
 use serde::{Deserialize, Serialize};
 
@@ -16,4 +17,20 @@ pub struct User {
     pub linkedin: Option<String>,
     pub github: Option<String>,
     pub gender: String,
+}
+
+
+
+#[derive(AsChangeset)]
+#[diesel(table_name = users)]
+pub struct UpdateUser<'a> {
+    pub name: Option<&'a str>,
+    pub role: Option<&'a str>,
+    pub alternate_email: Option<&'a str>,
+    pub phone: Option<&'a str>,
+    pub college: Option<&'a str>,
+    pub graduation_year: Option<i32>,
+    pub linkedin: Option<&'a str>,
+    pub github: Option<&'a str>,
+    pub gender: Option<&'a str>,
 }

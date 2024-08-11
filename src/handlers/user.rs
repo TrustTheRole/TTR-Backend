@@ -7,7 +7,7 @@ use serde_json::{json, Value};
 
 use crate::{
     db::DbPool,
-    models::user::User,
+    models::user::{UpdateUser, User},
     utils::{dispatch_email, generate_token, get_uid, Claims},
 };
 
@@ -87,15 +87,15 @@ pub async fn register(
         }
     };
 
-    if user_gender!="MALE".to_string() && user_gender!="FEMALE".to_string() {
+    if user_gender != "MALE".to_string() && user_gender != "FEMALE".to_string() {
         return (
             StatusCode::BAD_REQUEST,
             Json(json!({
                 "error":"Gender can only be MALE or FEMALE"
-            }))
-        ).into_response();
+            })),
+        )
+            .into_response();
     }
-
 
     let user_alternate_email = decrypted_json
         .get("alternate_email")
@@ -436,4 +436,76 @@ pub async fn authenticate(
         })),
     )
         .into_response()
+}
+
+
+pub async fn update_user_details(
+    Extension(claim): Extension<Claims>,
+    Extension(pool): Extension<Arc<DbPool>>,
+    Json(req): Json<Value>,
+) -> impl IntoResponse {
+    let _user_id = claim.sub;
+    let mut conn = match pool.get() {
+        Ok(connection) => connection,
+        Err(e) => {
+            tracing::debug!("{}", e);
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": "Database connection failed"
+                })),
+            )
+                .into_response();
+        }
+    };
+
+    match crate::schema::users::dsl::users
+        .filter(user_id.eq(&_user_id))
+        .first::<User>(&mut conn)
+    {
+        Ok(e_user) => e_user,
+        Err(e) => {
+            tracing::debug!("{}", e);
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error":"Cannot find user"
+                })),
+            )
+                .into_response();
+        }
+    };
+
+    let update_user = UpdateUser {
+        name: req.get("name").and_then(|v| v.as_str()),
+        role: req.get("role").and_then(|v| v.as_str()),
+        alternate_email: req.get("alternate_email").and_then(|v| v.as_str()),
+        phone: req.get("phone").and_then(|v| v.as_str()),
+        college: req.get("college").and_then(|v| v.as_str()),
+        graduation_year: req.get("graduation_year").and_then(|v| v.as_i64()).map(|y| y as i32),
+        linkedin: req.get("linkedin").and_then(|v| v.as_str()),
+        github: req.get("github").and_then(|v| v.as_str()),
+        gender: req.get("gender").and_then(|v| v.as_str()),
+    };
+
+    match diesel::update(users.filter(user_id.eq(&_user_id)))
+        .set(update_user)
+        .execute(&mut conn)
+    {
+        Ok(_) => (
+            StatusCode::OK,
+            Json(json!({"message": "User details updated successfully"})),
+        )
+            .into_response(),
+        Err(e) => {
+            tracing::debug!("{}", e);
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": "Failed to update user details"
+                })),
+            )
+                .into_response()
+        }
+    }
 }

@@ -2,14 +2,14 @@ use std::sync::Arc;
 
 use axum::{
     middleware,
-    routing::{get, post},
+    routing::{get, patch, post},
     Extension, Router,
 };
 use tower::ServiceBuilder;
 
 use crate::{
     db::DbPool,
-    handlers::user::{authenticate, check_user, get_user, register},
+    handlers::user::{authenticate, check_user, get_user, register, update_user_details},
     middlewares::{auth::auth_middleware, decrypt::decrypt_data},
 };
 
@@ -28,6 +28,7 @@ pub fn create_route(pool: Arc<DbPool>) -> Router {
         .merge(
             Router::new()
                 .route("/user/get_details", get(get_user))
+                .route("/user/update-details", patch(update_user_details))
                 .route_layer(middleware::from_fn(auth_middleware)),
         )
         .merge(Router::new().route("/check_user", get(check_user)))
