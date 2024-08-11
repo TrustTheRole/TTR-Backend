@@ -205,12 +205,20 @@
 
 ************************************************************************************************
 
-### POST /insights/get-all
+### GET /insights/get-insight
+- Get an insight.
+
+in query params:
+- `insight_id`: ID of the insight to get.
+
+************************************************************************************************
+
+### GET /insights/get-all
 - Get all insights.
 
 ************************************************************************************************
 
-### POST /insights/get-recent-insights
+### GET /insights/get-recent-insights
 - Get recent insights.
 
 in query params:
