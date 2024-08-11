@@ -2,6 +2,7 @@
 CREATE TABLE insights (
     insight_id VARCHAR(255) PRIMARY KEY,
     user_id VARCHAR(255) NOT NULL,
+    user_name VARCHAR(255) NOT NULL,
     insight_title VARCHAR(255) NOT NULL,
     insight_company VARCHAR(255) NOT NULL,
     insight_role VARCHAR(255) NOT NULL,

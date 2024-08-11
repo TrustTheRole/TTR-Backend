@@ -21,13 +21,14 @@ pub fn create_route(pool: Arc<DbPool>) -> Router {
             Router::new()
                 .merge(
                     Router::new()
-                        .route("/add-college", post(add_college_name))
+                        
                         .route("/add-company", post(add_company_name))
                         .route("/get-newsletter-subs", get(get_newsletter_subscibers)),
                 )
                 .route_layer(middleware::from_fn(auth_middleware))
                 .merge(
                     Router::new()
+                    .route("/add-college", post(add_college_name))
                         .route("/subscribe-newsletter", post(subscibe_to_newsletter))
                         .route("/get-tags", get(get_all_tags))
                         .route("/get-colleges", get(get_colleges))

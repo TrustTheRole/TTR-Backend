@@ -7,7 +7,7 @@ use std::sync::Arc;
 
 use crate::{
     db::DbPool,
-    models::insights::Insight,
+    models::{insights::Insight, user::User},
     utils::{extract_tags, get_uid, Claims},
 };
 
@@ -208,9 +208,25 @@ pub async fn create_insight(
 
     extract_tags(&_insight_tags,&mut conn);
 
+    let exising_user:User = match crate::schema::users::dsl::users
+    .filter(crate::schema::users::dsl::user_id.eq(&claim.sub))
+    .first::<crate::models::user::User>(&mut conn) {
+        Ok(user) => user,
+        Err(e) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error":e.to_string(),
+                })),
+            )
+                .into_response();
+        }
+    };
+
     let insight = Insight {
         insight_id: get_uid(),
         user_id: claim.sub,
+        user_name: exising_user.name,
         insight_title: _insight_title,
         insight_company: _insight_company,
         insight_description: _insight_description,

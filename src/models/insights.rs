@@ -8,6 +8,7 @@ use chrono::NaiveDateTime;
 pub struct Insight {
     pub insight_id: String,
     pub user_id: String,
+    pub user_name:String,
     pub insight_title: String,
     pub insight_company: String,
     pub insight_role: String,

@@ -4,11 +4,10 @@ use axum::{http::Request, response::IntoResponse, Extension, Json};
 use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl};
 use hyper::StatusCode;
 use serde_json::{json, Value};
+use diesel::OptionalExtension;
 
 use crate::{
-    db::DbPool,
-    models::user::{UpdateUser, User},
-    utils::{dispatch_email, generate_token, get_uid, Claims},
+    db::DbPool, models::{misc::colleges::College, user::{UpdateUser, User}}, schema::colleges::{college_name, id, students_registered}, utils::{dispatch_email, generate_token, get_uid, Claims}
 };
 
 use crate::schema::users::dsl::*;
@@ -119,6 +118,10 @@ pub async fn register(
         .get("role")
         .and_then(|v| v.as_str().map(|s| s.to_string()));
 
+    
+
+
+
     let _user_id = get_uid();
 
     let user = User {
@@ -126,7 +129,7 @@ pub async fn register(
         email: user_email.clone(),
         name: user_name.clone(),
         alternate_email: user_alternate_email,
-        college: user_college,
+        college: user_college.clone(),
         github: user_github,
         linkedin: user_linkedin,
         graduation_year: user_graduation_year,
@@ -148,6 +151,42 @@ pub async fn register(
                 .into_response();
         }
     };
+
+    if let Some(_college_name) = user_college {
+        let existing_college = crate::schema::colleges::dsl::colleges
+            .filter(college_name.eq(&college_name))
+            .first::<College>(&mut conn)
+            .optional();
+
+        match existing_college {
+            Ok(Some(mut _college)) => {
+                _college.students_registered += 1;
+                let _ = diesel::update(crate::schema::colleges::dsl::colleges.filter(id.eq(&_college.id)))
+                    .set(students_registered.eq(_college.students_registered))
+                    .execute(&mut conn);
+            }
+            Ok(None) => {
+                return (
+                    StatusCode::NOT_FOUND,
+                    Json(json!({
+                        "error":"College does not exist"
+                    })),
+                ).into_response();
+            }
+            Err(e) => {
+                tracing::debug!("{}", e);
+                return (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(json!({
+                        "error":"Failed to update college information"
+                    })),
+                )
+                .into_response();
+            }
+        }
+    }
+
+    
 
     let result = diesel::insert_into(users).values(&user).execute(&mut conn);
     if let Err(e) = result {

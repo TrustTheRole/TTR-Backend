@@ -8,8 +8,7 @@ diesel::table! {
         college_name -> Varchar,
         #[max_length = 255]
         college_location -> Varchar,
-        #[max_length = 255]
-        college_state -> Varchar,
+        students_registered -> Int4,
     }
 }
 
@@ -37,6 +36,8 @@ diesel::table! {
         insight_id -> Varchar,
         #[max_length = 255]
         user_id -> Varchar,
+        #[max_length = 255]
+        user_name -> Varchar,
         #[max_length = 255]
         insight_title -> Varchar,
         #[max_length = 255]
@@ -101,6 +102,9 @@ diesel::table! {
         gender -> Varchar,
     }
 }
+
+diesel::joinable!(insights -> users (user_id));
+diesel::joinable!(subscription -> users (user_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     colleges,

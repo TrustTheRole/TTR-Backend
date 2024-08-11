@@ -64,29 +64,7 @@ pub async fn add_college_name(
                 .into_response();
         }
     };
-    let _college_state = match req.get("college_state") {
-        Some(c_state) => match c_state.as_str() {
-            Some(state_str) => state_str.to_string(),
-            None => {
-                return (
-                    StatusCode::BAD_REQUEST,
-                    Json(json!({
-                        "error":"College state must be a string"
-                    })),
-                )
-                    .into_response();
-            }
-        },
-        None => {
-            return (
-                StatusCode::BAD_REQUEST,
-                Json(json!({
-                    "error":"College state is required"
-                })),
-            )
-                .into_response();
-        }
-    };
+    
     let mut conn = match pool.get() {
         Ok(connection) => connection,
         Err(e) => {
@@ -105,7 +83,7 @@ pub async fn add_college_name(
         id: get_uid(),
         college_name: _college_name,
         college_location: _college_location,
-        college_state: _college_state,
+        students_registered: 0,
     };
 
     match diesel::insert_into(crate::schema::colleges::dsl::colleges)
