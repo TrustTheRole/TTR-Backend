@@ -142,6 +142,34 @@
 
 ************************************************************************************************
 
+### PATCH /user/update-details
+- Update user details.
+
+- Request Headers:
+  ```json
+  {
+    "Authorization : Bearer <TOKEN>"
+  }
+  ```
+- Note: Replace `<TOKEN>` with the token received from the `/user/auth/authenticate` endpoint.
+
+- Request Body:
+  ```json
+  {
+    "name": "John Doe",
+    "role": "Software Engineer",
+    "alternate_email": "jhondoe@gmail.com",
+    "phone": "+1-555-123-4567",
+    "college": "University of Example",
+    "graduation_year": 2022,
+    "linkedin": "https://www.linkedin.com/in/johndoe",
+    "github": "https://www.github.com/johndoe"
+  }
+  ```
+
+************************************************************************************************
+
+
 ### POST /insights/create
 - Create a new insight.
 
