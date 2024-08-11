@@ -248,8 +248,7 @@ in query params:
   ```json
   {
     "college_name": "University of Example",
-    "college_location": "Example City",
-    "college_state": "State of the college"
+    "college_location": "Example City"
   }
   ```
 - Note: Replace `<TOKEN>` with the token received from the `/user/auth/authenticate` endpoint.
