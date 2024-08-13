@@ -470,3 +470,31 @@ pub async fn delete_insight(Extension(pool): Extension<Arc<DbPool>>,Query(query)
         .into_response()
     
 }
+
+pub async fn get_insights_by_user_id(
+    Extension(pool): Extension<Arc<DbPool>>,
+    Query(query): Query<Value>,
+) -> impl IntoResponse {
+    let user_id = match query.get("user_id") {
+        Some(u_id) => match u_id.as_str() {
+            Some(id_str) => id_str.to_string(),
+            None => return (StatusCode::BAD_REQUEST, Json(json!({ "error": "User ID must be a string" }))).into_response(),
+        },
+        None => return (StatusCode::BAD_REQUEST, Json(json!({ "error": "User ID is required" }))).into_response(),
+    };
+
+    let mut conn = match pool.get() {
+        Ok(connection) => connection,
+        Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": format!("Database connection failed: {}", e) }))).into_response(),
+    };
+
+    match crate::schema::insights::dsl::insights
+        .filter(crate::schema::insights::dsl::user_id.eq(user_id))
+        .load::<Insight>(&mut conn) {
+        Ok(insights) => (
+            StatusCode::OK,
+            Json(json!({ "insights": insights })),
+        ).into_response(),
+        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
+    }
+}
