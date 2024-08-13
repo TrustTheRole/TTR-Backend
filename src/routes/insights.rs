@@ -4,7 +4,7 @@ use axum::{middleware, routing::{delete, get, post}, Extension, Router};
 
 use crate::{
     db::DbPool,
-    handlers::insights::{create_insight, delete_insight, get_all_insights, get_insight_by_id, get_recent_insights},
+    handlers::insights::{create_insight, delete_insight, get_all_insights, get_insight_by_id, get_recent_insights, get_insights_by_user_id},
     middlewares::auth::auth_middleware,
 };
 
@@ -17,6 +17,7 @@ pub fn create_route(pool: Arc<DbPool>) -> Router {
                 .route("/delete", delete(delete_insight))
                 .route_layer(middleware::from_fn(auth_middleware))
                 .route("/get-all", get(get_all_insights))
+                .route("/get-insight-userid", get(get_insights_by_user_id))
                 .route("/get-insight", get(get_insight_by_id))
                 .route("/get-recent-insights", get(get_recent_insights)),
         )
