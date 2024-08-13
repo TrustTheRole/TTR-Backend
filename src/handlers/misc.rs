@@ -529,3 +529,46 @@ pub async fn send_newsletter(
     )
         .into_response()
 }
+
+pub async fn get_all_companies(
+    Extension(pool): Extension<Arc<DbPool>>,
+) -> impl IntoResponse {
+    // Establish a connection to the database
+    let mut conn = match pool.get() {
+        Ok(conn) => conn,
+        Err(e) => {
+            tracing::debug!("{:?}", e);
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": "Database connection failed"
+                })),
+            )
+                .into_response();
+        }
+    };
+
+    // Query the database to retrieve all companies
+    let companies = crate::schema::companies::dsl::companies
+        .load::<Companies>(&mut conn);
+
+    // Handle errors if the query fails
+    if let Err(e) = companies {
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({
+                "error": e.to_string(),
+            })),
+        )
+            .into_response();
+    }
+
+    // Return the companies as a JSON response
+    (
+        StatusCode::OK,
+        Json(json!({
+            "companies": companies.unwrap()
+        })),
+    )
+        .into_response()
+}
