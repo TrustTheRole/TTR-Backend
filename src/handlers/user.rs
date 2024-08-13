@@ -548,3 +548,42 @@ pub async fn update_user_details(
         }
     }
 }
+
+pub async fn get_all_users(
+    Extension(pool): Extension<Arc<DbPool>>,
+) -> impl IntoResponse {
+    let mut conn = match pool.get() {
+        Ok(connection) => connection,
+        Err(e) => {
+            tracing::debug!("{}", e);
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": "Database connection failed"
+                })),
+            )
+                .into_response();
+        }
+    };
+
+    match users.load::<User>(&mut conn) {
+        Ok(all_users) => (
+            StatusCode::OK,
+            Json(json!({
+                "message": "All users retrieved successfully",
+                "users": all_users
+            })),
+        )
+            .into_response(),
+        Err(e) => {
+            tracing::debug!("{}", e);
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": "Failed to retrieve users"
+                })),
+            )
+                .into_response()
+        }
+    }
+}
