@@ -298,9 +298,9 @@ pub async fn get_user(
                 .into_response();
         }
     };
-    let user_email = claim.sub;
+    let _user_id = claim.sub;
     let existing_user = match crate::schema::users::dsl::users
-        .filter(email.eq(&user_email))
+        .filter(user_id.eq(&_user_id))
         .first::<User>(&mut conn)
     {
         Ok(e_user) => e_user,
