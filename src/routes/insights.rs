@@ -1,11 +1,18 @@
 use std::sync::Arc;
 
-use axum::{middleware, routing::{delete, get, post}, Extension, Router};
+use axum::{
+    middleware,
+    routing::{delete, get, post},
+    Extension, Router,
+};
 
 use crate::{
     db::DbPool,
-    handlers::insights::{create_insight, delete_insight, get_all_insights, get_insight_by_id, get_recent_insights, get_insights_by_user_id},
-    middlewares::auth::auth_middleware,
+    handlers::insights::{
+        create_insight, delete_insight, disaprove, get_all_insights, get_insight_by_id,
+        get_insights_by_user_id, get_recent_insights,
+    },
+    middlewares::auth::{auth_middleware, check_superadmin},
 };
 
 pub fn create_route(pool: Arc<DbPool>) -> Router {
@@ -13,6 +20,8 @@ pub fn create_route(pool: Arc<DbPool>) -> Router {
         .nest(
             "/insights",
             Router::new()
+                .route("/disaprove", delete(disaprove))
+                .route_layer(middleware::from_fn(check_superadmin))
                 .route("/create", post(create_insight))
                 .route("/delete", delete(delete_insight))
                 .route_layer(middleware::from_fn(auth_middleware))

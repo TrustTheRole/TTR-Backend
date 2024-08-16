@@ -1,25 +1,90 @@
-<div style="width: 80%; margin: auto; background-color: #ffffff; padding: 20px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);">
-    <div style="background-color: #4CAF50; color: white; padding: 10px 0; text-align: center; border-radius: 6px;">
-        <h1>Newsletter Title</h1>
-    </div>
-    <div style="margin: 20px 0;">
-        <p>
-            Hello [Recipient's Name],
-        </p>
-        <p>
-            Welcome to our monthly newsletter! We are excited to share the latest updates and insights with you.
-        </p>
-        <h2>Section Title</h2>
-        <p>
-            This is the content for the section. You can include any relevant information, updates, or articles here.
-        </p>
-        <p>
-            Thank you for being a part of our community.
-        </p>
-    </div>
-    <div style="text-align: center; padding: 10px 0; background-color: #f1f1f1;">
-        <p>
-            © 2024 Your Company. All rights reserved.
-        </p>
-    </div>
-</div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>[TTR] Insight Disapproval Notification</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            font-family: Arial, sans-serif;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        .container {
+            width: 600px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            border: 1px solid #cccccc;
+        }
+        .header, .content, .footer {
+            padding: 20px;
+            text-align: center;
+        }
+        .header img {
+            width: 35%;
+            border: 0;
+        }
+        .status-icon img {
+            width: 48px;
+            vertical-align: middle;
+        }
+        .status-text {
+            font-size: 24px;
+            color: #ff0000;
+            margin: 0;
+        }
+        .remarks {
+            font-size: 16px;
+            color: #333333;
+            margin-top: 20px;
+        }
+        .button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            display: inline-block;
+            font-family: Arial, sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <table role="presentation" border="0" cellpadding="0" cellspacing="0" class="container">
+        <tr>
+            <td class="header">
+                <img src="https://ik.imagekit.io/s1vtpplq4/TTR.png?updatedAt=1722362280763" alt="Company Logo">
+            </td>
+        </tr>
+        <tr>
+            <td class="content">
+                <table role="presentation" border="0" cellpadding="0" cellspacing="0" align="center">
+                    <tr>
+                        <!-- <td class="status-icon">
+                            <img src="https://images.unsplash.com/photo-1719937206158-cad5e6775044?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDF8MHxmZWF0dXJlZC1waG90b3MtZmVlZHwxfHx8ZW58MHx8fHx8" alt="Error Icon">
+                        </td> -->
+                        <td>
+                            <h1 class="status-text">Insight Disapproved</h1>
+                        </td>
+                    </tr>
+                </table>
+                <p><strong>Title:</strong> [Insight Title]</p>
+                <p><strong>ID:</strong> [Insight ID]</p>
+                <p><strong>Image:</strong></p>
+                <img src="https://images.unsplash.com/photo-1719937206158-cad5e6775044?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDF8MHxmZWF0dXJlZC1waG90b3MtZmVlZHwxfHx8ZW58MHx8fHx8" alt="Insight Image" style="width: 100%; max-width: 300px; height: auto; border-radius: 10px;">
+                <p class="remarks"><strong>Remarks for Disapproval:</strong> [Disapproval Remarks]</p>
+            </td>
+        </tr>
+        <tr>
+            <td class="footer">
+                <a href="https://yourcompanywebsite.com" class="button">Visit Our Website</a>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

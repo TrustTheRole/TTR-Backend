@@ -1,5 +1,8 @@
 use axum::{extract::Query, response::IntoResponse, Extension, Json};
-use diesel::{query_dsl::methods::{FilterDsl, LimitDsl, OrderDsl}, ExpressionMethods, RunQueryDsl};
+use diesel::{
+    query_dsl::methods::{FilterDsl, LimitDsl, OrderDsl},
+    ExpressionMethods, RunQueryDsl,
+};
 use hyper::StatusCode;
 use serde::Deserialize;
 use serde_json::{json, Value};
@@ -8,7 +11,7 @@ use std::sync::Arc;
 use crate::{
     db::DbPool,
     models::{insights::Insight, user::User},
-    utils::{extract_tags, get_uid, Claims},
+    utils::{dispatch_email, extract_tags, get_uid, Claims},
 };
 
 pub async fn create_insight(
@@ -189,8 +192,6 @@ pub async fn create_insight(
     println!("{:?}", _insight_focus_points);
     println!("{:?}", _insight_tags);
 
-    
-
     let mut conn = match pool.get() {
         Ok(connection) => connection,
         Err(e) => {
@@ -206,11 +207,12 @@ pub async fn create_insight(
     };
     println!("{}", claim.sub);
 
-    extract_tags(&_insight_tags,&mut conn);
+    extract_tags(&_insight_tags, &mut conn);
 
-    let exising_user:User = match crate::schema::users::dsl::users
-    .filter(crate::schema::users::dsl::user_id.eq(&claim.sub))
-    .first::<crate::models::user::User>(&mut conn) {
+    let exising_user: User = match crate::schema::users::dsl::users
+        .filter(crate::schema::users::dsl::user_id.eq(&claim.sub))
+        .first::<crate::models::user::User>(&mut conn)
+    {
         Ok(user) => user,
         Err(e) => {
             return (
@@ -285,15 +287,13 @@ pub async fn get_all_insights(Extension(pool): Extension<Arc<DbPool>>) -> impl I
             .into_response();
     };
 
-
     (
         StatusCode::OK,
         Json(json!({
             "insights":result.unwrap(),
         })),
     )
-        .into_response(
-    )
+        .into_response()
 }
 
 #[derive(Deserialize)]
@@ -301,7 +301,10 @@ pub struct InsightsQuery {
     pub limit: Option<usize>,
 }
 
-pub async fn get_recent_insights(Extension(pool): Extension<Arc<DbPool>>,Query(query): Query<InsightsQuery>,)->impl IntoResponse{
+pub async fn get_recent_insights(
+    Extension(pool): Extension<Arc<DbPool>>,
+    Query(query): Query<InsightsQuery>,
+) -> impl IntoResponse {
     let limit = query.limit.unwrap_or(5);
 
     let mut conn = match pool.get() {
@@ -338,12 +341,14 @@ pub async fn get_recent_insights(Extension(pool): Extension<Arc<DbPool>>,Query(q
         Json(json!({
             "insights":result.unwrap(),
         })),
-
     )
         .into_response()
 }
 
-pub async fn get_insight_by_id(Extension(pool): Extension<Arc<DbPool>>,Query(query): Query<Value>,)->impl IntoResponse{
+pub async fn get_insight_by_id(
+    Extension(pool): Extension<Arc<DbPool>>,
+    Query(query): Query<Value>,
+) -> impl IntoResponse {
     let insight_id = match query.get("insight_id") {
         Some(i_id) => match i_id.as_str() {
             Some(id_str) => id_str.to_string(),
@@ -401,14 +406,14 @@ pub async fn get_insight_by_id(Extension(pool): Extension<Arc<DbPool>>,Query(que
         Json(json!({
             "insight":result.unwrap(),
         })),
-
     )
         .into_response()
 }
 
-
-pub async fn delete_insight(Extension(pool): Extension<Arc<DbPool>>,Query(query): Query<Value>,)->impl IntoResponse{
-    
+pub async fn delete_insight(
+    Extension(pool): Extension<Arc<DbPool>>,
+    Query(query): Query<Value>,
+) -> impl IntoResponse {
     let insight_id = match query.get("insight_id") {
         Some(i_id) => match i_id.as_str() {
             Some(id_str) => id_str.to_string(),
@@ -447,8 +452,11 @@ pub async fn delete_insight(Extension(pool): Extension<Arc<DbPool>>,Query(query)
         }
     };
 
-    let result = diesel::delete(crate::schema::insights::dsl::insights.filter(crate::schema::insights::dsl::insight_id.eq(insight_id)))
-        .execute(&mut conn);
+    let result = diesel::delete(
+        crate::schema::insights::dsl::insights
+            .filter(crate::schema::insights::dsl::insight_id.eq(insight_id)),
+    )
+    .execute(&mut conn);
 
     if let Err(e) = result {
         return (
@@ -465,10 +473,8 @@ pub async fn delete_insight(Extension(pool): Extension<Arc<DbPool>>,Query(query)
         Json(json!({
             "message":"Insight deleted successfully",
         })),
-
     )
         .into_response()
-    
 }
 
 pub async fn get_insights_by_user_id(
@@ -478,23 +484,245 @@ pub async fn get_insights_by_user_id(
     let user_id = match query.get("user_id") {
         Some(u_id) => match u_id.as_str() {
             Some(id_str) => id_str.to_string(),
-            None => return (StatusCode::BAD_REQUEST, Json(json!({ "error": "User ID must be a string" }))).into_response(),
+            None => {
+                return (
+                    StatusCode::BAD_REQUEST,
+                    Json(json!({ "error": "User ID must be a string" })),
+                )
+                    .into_response()
+            }
         },
-        None => return (StatusCode::BAD_REQUEST, Json(json!({ "error": "User ID is required" }))).into_response(),
+        None => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(json!({ "error": "User ID is required" })),
+            )
+                .into_response()
+        }
     };
 
     let mut conn = match pool.get() {
         Ok(connection) => connection,
-        Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": format!("Database connection failed: {}", e) }))).into_response(),
+        Err(e) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({ "error": format!("Database connection failed: {}", e) })),
+            )
+                .into_response()
+        }
     };
 
     match crate::schema::insights::dsl::insights
         .filter(crate::schema::insights::dsl::user_id.eq(user_id))
-        .load::<Insight>(&mut conn) {
-        Ok(insights) => (
-            StatusCode::OK,
-            Json(json!({ "insights": insights })),
-        ).into_response(),
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
+        .load::<Insight>(&mut conn)
+    {
+        Ok(insights) => (StatusCode::OK, Json(json!({ "insights": insights }))).into_response(),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({ "error": e.to_string() })),
+        )
+            .into_response(),
     }
+}
+
+pub async fn disaprove(
+    Extension(pool): Extension<Arc<DbPool>>,
+    Query(query): Query<Value>,
+) -> impl IntoResponse {
+    let insight_id = match query.get("insight_id") {
+        Some(i_id) => match i_id.as_str() {
+            Some(id_str) => id_str.to_string(),
+            None => {
+                return (
+                    StatusCode::BAD_REQUEST,
+                    Json(json!({
+                        "error":"Insight ID must be a string"
+                    })),
+                )
+                    .into_response();
+            }
+        },
+        None => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(json!({
+                    "error":"Insight ID is required"
+                })),
+            )
+                .into_response();
+        }
+    };
+
+    let mut conn = match pool.get() {
+        Ok(connection) => connection,
+        Err(e) => {
+            tracing::debug!("{}", e);
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error":"Database connection failed"
+                })),
+            )
+                .into_response();
+        }
+    };
+
+    let _existing_insight: Insight = match crate::schema::insights::dsl::insights
+        .filter(crate::schema::insights::dsl::insight_id.eq(&insight_id))
+        .first::<Insight>(&mut conn)
+    {
+        Ok(insight) => insight,
+        Err(e) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error":e.to_string(),
+                })),
+            )
+                .into_response();
+        }
+    };
+
+    let _user:User = match crate::schema::users::dsl::users
+        .filter(crate::schema::users::dsl::user_id.eq(&_existing_insight.user_id))
+        .first::<User>(&mut conn)
+    {
+        Ok(user) => user,
+        Err(e) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error":e.to_string(),
+                })),
+            )
+                .into_response();
+        }
+    };
+
+    let result = diesel::delete(
+        crate::schema::insights::dsl::insights
+            .filter(crate::schema::insights::dsl::insight_id.eq(insight_id)),
+    )
+    .execute(&mut conn);
+
+    let html_content = format!(
+        r#"
+        <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>[TTR] Insight Disapproval Notification</title>
+        <style>
+            body {{
+                margin: 0;
+                padding: 0;
+                background-color: #f4f4f4;
+                font-family: Arial, sans-serif;
+            }}
+            table {{
+                border-collapse: collapse;
+                width: 100%;
+            }}
+            .container {{
+                width: 600px;
+                margin: 20px auto;
+                background-color: #ffffff;
+                border: 1px solid #cccccc;
+            }}
+            .header, .content, .footer {{
+                padding: 20px;
+                text-align: center;
+            }}
+            .header img {{
+                width: 35%;
+                border: 0;
+            }}
+            .status-icon img {{
+                width: 48px;
+                vertical-align: middle;
+            }}
+            .status-text {{
+                font-size: 24px;
+                color: #ff0000;
+                margin: 0;
+            }}
+            .remarks {{
+                font-size: 16px;
+                color: #333333;
+                margin-top: 20px;
+            }}
+            .button {{
+                background-color: #4CAF50;
+                color: white;
+                padding: 10px 20px;
+                text-decoration: none;
+                border-radius: 5px;
+                display: inline-block;
+                font-family: Arial, sans-serif;
+            }}
+        </style>
+    </head>
+    <body>
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" class="container">
+            <tr>
+                <td class="header">
+                    <img src="https://ik.imagekit.io/s1vtpplq4/TTR.png?updatedAt=1722362280763" alt="Company Logo">
+                </td>
+            </tr>
+            <tr>
+                <td class="content">
+                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" align="center">
+                        <tr>
+                            <!-- <td class="status-icon">
+                                <img src="https://images.unsplash.com/photo-1719937206158-cad5e6775044?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDF8MHxmZWF0dXJlZC1waG90b3MtZmVlZHwxfHx8ZW58MHx8fHx8" alt="Error Icon">
+                            </td> -->
+                            <td>
+                                <h1 class="status-text">Insight Disapproved</h1>
+                            </td>
+                        </tr>
+                    </table>
+                    <p><strong>Title:</strong> [Insight Title]</p>
+                    <p><strong>ID:</strong> [Insight ID]</p>
+                    <p><strong>Image:</strong></p>
+                    <img src="https://images.unsplash.com/photo-1719937206158-cad5e6775044?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDF8MHxmZWF0dXJlZC1waG90b3MtZmVlZHwxfHx8ZW58MHx8fHx8" alt="Insight Image" style="width: 100%; max-width: 600px; height: auto; border-radius: 10px;">
+                    <p class="remarks"><strong>Remarks for Disapproval:</strong> [Disapproval Remarks]</p>
+                </td>
+            </tr>
+            <tr>
+                <td class="footer">
+                    <a href="https://yourcompanywebsite.com" class="button">Visit Our Website</a>
+                </td>
+            </tr>
+        </table>
+    </body>
+    </html>
+        "#
+    );
+
+    let message = format!(
+        "Hello {},\n\nYour insight with the title '{}' has been disapproved. Please check your email for more details.\n\nRegards,\nTeam TTR",
+        _user.name, _existing_insight.insight_title
+    );
+    
+
+    dispatch_email(&_user.name, &_user.email, &message, "[TTR] Insight Disapproval Notification".to_string(), &html_content).await;
+
+    if let Err(e) = result {
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({
+                "error":e.to_string(),
+            })),
+        )
+            .into_response();
+    };
+
+    (
+        StatusCode::OK,
+        Json(json!({
+            "message":"Insight Disaprooved"
+        })),
+    )
+        .into_response()
 }
