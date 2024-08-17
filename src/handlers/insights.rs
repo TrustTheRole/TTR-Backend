@@ -10,7 +10,7 @@ use std::sync::Arc;
 
 use crate::{
     db::DbPool,
-    models::{insights::Insight, user::User},
+    models::{insights::{Insight, UpdateInsight}, user::User},
     utils::{dispatch_email, extract_tags, get_uid, Claims},
 };
 
@@ -525,6 +525,80 @@ pub async fn get_insights_by_user_id(
     }
 }
 
+pub async fn update_insight(
+    Extension(pool): Extension<Arc<DbPool>>,
+    Json(req): Json<Value>,
+)-> impl IntoResponse {
+    let mut conn = match pool.get() {
+        Ok(connection) => connection,
+        Err(e) => {
+            tracing::debug!("{}", e);
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": "Database connection failed"
+                })),
+            )
+                .into_response();
+        }
+    };
+
+    let _insight_id = match req.get("insight_id") {
+        Some(_i_id)=>match _i_id.as_str(){
+            Some(i_id)=>i_id.to_string(),
+            None=>{
+                return (
+                    StatusCode::BAD_REQUEST,
+                    Json(json!({
+                        "error":"Insight ID must be a string"
+                    })),
+                )
+                    .into_response();
+            }
+        },
+        None=>{
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(json!({
+                    "error":"Insight ID is required"
+                })),
+            )
+                .into_response();
+            
+        }
+    };
+
+    let updated_insight = UpdateInsight{
+        insight_description: req.get("insight_description").and_then(|v| v.as_str()),
+        insight_focus_points: req.get("insight_focus_points").and_then(|v| serde_json::from_value(v.clone()).ok()),
+        insight_role: req.get("insight_role").and_then(|v| v.as_str()),
+        insight_tags: req.get("insight_tags").and_then(|v| serde_json::from_value(v.clone()).ok()),
+        insight_title: req.get("insight_title").and_then(|v| v.as_str()),
+    };
+
+    match diesel::update(crate::schema::insights::table.filter(crate::schema::insights::insight_id.eq(&_insight_id)))
+        .set(&updated_insight)
+        .execute(&mut conn)
+    {
+        Ok(_) => (
+            StatusCode::OK,
+            Json(json!({
+                "message":"Insight updated successfully"
+            })),
+        ).into_response(),
+        Err(e) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": e.to_string(),
+                })),
+            )
+                .into_response();
+        }
+        
+    }
+}
+
 pub async fn disaprove(
     Extension(pool): Extension<Arc<DbPool>>,
     Query(query): Query<Value>,
@@ -583,7 +657,7 @@ pub async fn disaprove(
         }
     };
 
-    let _user:User = match crate::schema::users::dsl::users
+    let _user: User = match crate::schema::users::dsl::users
         .filter(crate::schema::users::dsl::user_id.eq(&_existing_insight.user_id))
         .first::<User>(&mut conn)
     {
@@ -704,9 +778,15 @@ pub async fn disaprove(
         "Hello {},\n\nYour insight with the title '{}' has been disapproved. Please check your email for more details.\n\nRegards,\nTeam TTR",
         _user.name, _existing_insight.insight_title
     );
-    
 
-    dispatch_email(&_user.name, &_user.email, &message, "[TTR] Insight Disapproval Notification".to_string(), &html_content).await;
+    dispatch_email(
+        &_user.name,
+        &_user.email,
+        &message,
+        "[TTR] Insight Disapproval Notification".to_string(),
+        &html_content,
+    )
+    .await;
 
     if let Err(e) = result {
         return (
