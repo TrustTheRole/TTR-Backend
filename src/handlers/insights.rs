@@ -207,7 +207,7 @@ pub async fn create_insight(
     };
     println!("{}", claim.sub);
 
-    extract_tags(&_insight_tags, &mut conn);
+    // extract_tags(&_insight_tags, &mut conn);
 
     let exising_user: User = match crate::schema::users::dsl::users
         .filter(crate::schema::users::dsl::user_id.eq(&claim.sub))
