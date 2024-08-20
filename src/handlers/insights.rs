@@ -11,7 +11,7 @@ use std::sync::Arc;
 use crate::{
     db::DbPool,
     models::{insights::{Insight, UpdateInsight}, user::User},
-    utils::{dispatch_email, extract_tags, get_uid, Claims},
+    utils::{dispatch_email, get_uid, Claims},
 };
 
 pub async fn create_insight(

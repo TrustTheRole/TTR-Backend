@@ -109,7 +109,7 @@ pub async fn register(
         .get("linkedin")
         .and_then(|v| v.as_str().map(|s| s.to_string()));
     let user_graduation_year: Option<i32> = decrypted_json
-        .get("linkedin")
+        .get("graduation_year")
         .and_then(|v| v.as_i64().and_then(|n| n.try_into().ok()));
     let user_phone = decrypted_json
         .get("phone")
@@ -118,8 +118,8 @@ pub async fn register(
         .get("role")
         .and_then(|v| v.as_str().map(|s| s.to_string()));
 
-    
 
+    tracing::debug!("{:?}",user_graduation_year);
 
 
     let _user_id = get_uid();
@@ -249,7 +249,7 @@ pub async fn register(
                     </tr>
                     <tr>
                         <td align="center" style="padding: 20px;">
-                            <a href="https://ttr.gridsphere.io" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; font-family: Arial, sans-serif;">SUBSCRIBE</a>
+                            <a href="https://www.trustherole.in/" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; font-family: Arial, sans-serif;">SUBSCRIBE</a>
                         </td>
                     </tr>
                 </table>
