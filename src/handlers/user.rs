@@ -1,13 +1,19 @@
 use std::sync::Arc;
 
 use axum::{http::Request, response::IntoResponse, Extension, Json};
+use diesel::OptionalExtension;
 use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl};
 use hyper::StatusCode;
 use serde_json::{json, Value};
-use diesel::OptionalExtension;
 
 use crate::{
-    db::DbPool, models::{misc::colleges::College, user::{UpdateUser, User}}, schema::colleges::{college_name, id, students_registered}, utils::{dispatch_email, generate_token, get_uid, Claims}
+    db::DbPool,
+    models::{
+        misc::colleges::College,
+        user::{UpdateUser, User},
+    },
+    schema::colleges::{college_name, id, students_registered},
+    utils::{dispatch_email, generate_token, get_uid, Claims},
 };
 
 use crate::schema::users::dsl::*;
@@ -118,9 +124,7 @@ pub async fn register(
         .get("role")
         .and_then(|v| v.as_str().map(|s| s.to_string()));
 
-
-    tracing::debug!("{:?}",user_graduation_year);
-
+    tracing::debug!("{:?}", user_graduation_year);
 
     let _user_id = get_uid();
 
@@ -161,9 +165,11 @@ pub async fn register(
         match existing_college {
             Ok(Some(mut _college)) => {
                 _college.students_registered += 1;
-                let _ = diesel::update(crate::schema::colleges::dsl::colleges.filter(id.eq(&_college.id)))
-                    .set(students_registered.eq(_college.students_registered))
-                    .execute(&mut conn);
+                let _ = diesel::update(
+                    crate::schema::colleges::dsl::colleges.filter(id.eq(&_college.id)),
+                )
+                .set(students_registered.eq(_college.students_registered))
+                .execute(&mut conn);
             }
             Ok(None) => {
                 return (
@@ -171,7 +177,8 @@ pub async fn register(
                     Json(json!({
                         "error":"College does not exist"
                     })),
-                ).into_response();
+                )
+                    .into_response();
             }
             Err(e) => {
                 tracing::debug!("{}", e);
@@ -181,12 +188,10 @@ pub async fn register(
                         "error":"Failed to update college information"
                     })),
                 )
-                .into_response();
+                    .into_response();
             }
         }
     }
-
-    
 
     let result = diesel::insert_into(users).values(&user).execute(&mut conn);
     if let Err(e) = result {
@@ -213,62 +218,63 @@ pub async fn register(
     }
     let token = token.unwrap();
 
-    let message = "Welcome to the community".to_string();
+    tokio::spawn(async move {
+        let message = "Welcome to the community".to_string();
 
-    let html_content = r#"
-    <body style="margin: 0; padding: 0; background-color: #f4f4f4;">
-    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
-        <tr>
-            <td align="center" style="padding: 10px;">
-                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="600" style="border: 1px solid #cccccc; background-color: white;">
-                    <tr>
-                        <td align="center" style="padding: 40px 0 30px 0;">
-                            <img src="https://ik.imagekit.io/s1vtpplq4/TTR.png?updatedAt=1722362280763" alt="TTR Logo" style="display: block; width: 35%; border: 0;">
-                        </td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 20px; text-align: center; font-family: Arial, sans-serif; color: #333333;">
-                            <table role="presentation" border="0" cellpadding="0" cellspacing="0" align="center">
-                                <tr>
-                                    <td style="vertical-align: middle;">
-                                        <img src="https://ik.imagekit.io/s1vtpplq4/icons8-success-48.png?updatedAt=1722362334334" alt="Success Icon" style="display: block;">
-                                    </td>
-                                    <td style="vertical-align: middle; padding-left: 10px;">
-                                        <h1 style="color: green; font-size: 24px; margin: 0;">You are successfully registered.</h1>
-                                    </td>
-                                </tr>
-                            </table>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 20px; text-align: center; font-family: Arial, sans-serif; color: #333333;">
-                            <p style="font-size: 16px; margin: 0;">
-                                Welcome to #TTR! You're now part of our interview-savvy community. Ready for more insider tips? Subscribe to our newsletter and stay ahead of the curve. Your career journey just got a serious upgrade!
-                            </p>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td align="center" style="padding: 20px;">
-                            <a href="https://www.trustherole.in/" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; font-family: Arial, sans-serif;">SUBSCRIBE</a>
-                        </td>
-                    </tr>
-                </table>
-            </td>
-        </tr>
-    </table>
-</body>
-
-
+        let html_content = r#"
+            <body style="margin: 0; padding: 0; background-color: #f4f4f4;">
+            <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+                    <td align="center" style="padding: 10px;">
+                        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="600" style="border: 1px solid #cccccc; background-color: white;">
+                            <tr>
+                                <td align="center" style="padding: 40px 0 30px 0;">
+                                    <img src="https://ik.imagekit.io/s1vtpplq4/TTR.png?updatedAt=1722362280763" alt="TTR Logo" style="display: block; width: 35%; border: 0;">
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 20px; text-align: center; font-family: Arial, sans-serif; color: #333333;">
+                                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" align="center">
+                                        <tr>
+                                            <td style="vertical-align: middle;">
+                                                <img src="https://ik.imagekit.io/s1vtpplq4/icons8-success-48.png?updatedAt=1722362334334" alt="Success Icon" style="display: block;">
+                                            </td>
+                                            <td style="vertical-align: middle; padding-left: 10px;">
+                                                <h1 style="color: green; font-size: 24px; margin: 0;">You are successfully registered.</h1>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 20px; text-align: center; font-family: Arial, sans-serif; color: #333333;">
+                                    <p style="font-size: 16px; margin: 0;">
+                                        Welcome to #TTR! You're now part of our interview-savvy community. Ready for more insider tips? Subscribe to our newsletter and stay ahead of the curve. Your career journey just got a serious upgrade!
+                                    </p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td align="center" style="padding: 20px;">
+                                    <a href="https://www.trustherole.in/" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; font-family: Arial, sans-serif;">SUBSCRIBE</a>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </body>
     "#;
 
+    // Send email
     dispatch_email(
         &user_name,
         &user_email,
         &message,
         "Welcome to the TTR Community".to_string(),
         &html_content,
-    )
-    .await;
+    ).await;
+
+    });
 
     (
         StatusCode::CREATED,
@@ -477,7 +483,6 @@ pub async fn authenticate(
         .into_response()
 }
 
-
 pub async fn update_user_details(
     Extension(claim): Extension<Claims>,
     Extension(pool): Extension<Arc<DbPool>>,
@@ -521,7 +526,10 @@ pub async fn update_user_details(
         alternate_email: req.get("alternate_email").and_then(|v| v.as_str()),
         phone: req.get("phone").and_then(|v| v.as_str()),
         college: req.get("college").and_then(|v| v.as_str()),
-        graduation_year: req.get("graduation_year").and_then(|v| v.as_i64()).map(|y| y as i32),
+        graduation_year: req
+            .get("graduation_year")
+            .and_then(|v| v.as_i64())
+            .map(|y| y as i32),
         linkedin: req.get("linkedin").and_then(|v| v.as_str()),
         github: req.get("github").and_then(|v| v.as_str()),
         gender: req.get("gender").and_then(|v| v.as_str()),
@@ -549,9 +557,7 @@ pub async fn update_user_details(
     }
 }
 
-pub async fn get_all_users(
-    Extension(pool): Extension<Arc<DbPool>>,
-) -> impl IntoResponse {
+pub async fn get_all_users(Extension(pool): Extension<Arc<DbPool>>) -> impl IntoResponse {
     let mut conn = match pool.get() {
         Ok(connection) => connection,
         Err(e) => {
