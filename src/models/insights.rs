@@ -20,6 +20,19 @@ pub struct Insight {
     pub created_at: NaiveDateTime,
 }
 
+#[derive(Debug, Serialize)]
+pub struct InsightResponse {
+    pub insight_id: String,
+    pub insight_title: String,
+    pub insight_company: String,
+    pub insight_role: String,
+    pub insight_tags: Vec<String>,
+    pub insight_description: String,
+    pub insight_picture_urls: Vec<String>,
+    pub insight_focus_points: Vec<String>,
+    pub created_at: NaiveDateTime,
+}
+
 #[derive(AsChangeset)]
 #[diesel(table_name = insights)]
 pub struct UpdateInsight<'a> {

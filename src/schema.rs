@@ -53,6 +53,15 @@ diesel::table! {
 }
 
 diesel::table! {
+    likes (insight_id) {
+        #[max_length = 255]
+        insight_id -> Varchar,
+        like_count -> Int4,
+        view_count -> Int4,
+    }
+}
+
+diesel::table! {
     newsletter_sub (email) {
         #[max_length = 255]
         email -> Varchar,
@@ -104,6 +113,7 @@ diesel::table! {
 }
 
 diesel::joinable!(insights -> users (user_id));
+diesel::joinable!(likes -> insights (insight_id));
 diesel::joinable!(subscription -> users (user_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
@@ -111,6 +121,7 @@ diesel::allow_tables_to_appear_in_same_query!(
     companies,
     followers,
     insights,
+    likes,
     newsletter_sub,
     subscription,
     tags,

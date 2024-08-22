@@ -10,7 +10,7 @@ use std::sync::Arc;
 
 use crate::{
     db::DbPool,
-    models::{insights::{Insight, UpdateInsight}, user::User},
+    models::{insights::{Insight, InsightResponse, UpdateInsight}, likes::Likes, user::User},
     utils::{dispatch_email, get_uid, Claims},
 };
 
@@ -252,6 +252,24 @@ pub async fn create_insight(
             .into_response();
     };
 
+    let insight_stats = Likes{
+        insight_id: insight.insight_id.clone(),
+        like_count: 0,
+        view_count: 0,
+    };
+
+    let result = diesel::insert_into(crate::schema::likes::dsl::likes).values(&insight_stats).execute(&mut conn);
+
+    if let Err(e) = result {
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({
+                "error":e.to_string(),
+            })),
+        )
+            .into_response();
+    };
+
     (
         StatusCode::CREATED,
         Json(json!({
@@ -276,6 +294,7 @@ pub async fn get_all_insights(Extension(pool): Extension<Arc<DbPool>>) -> impl I
                 .into_response();
         }
     };
+
     let result = crate::schema::insights::dsl::insights.load::<Insight>(&mut conn);
     if let Err(e) = result {
         return (
@@ -287,10 +306,24 @@ pub async fn get_all_insights(Extension(pool): Extension<Arc<DbPool>>) -> impl I
             .into_response();
     };
 
+    let insights: Vec<InsightResponse> = result.unwrap().into_iter().map(|insight| {
+        InsightResponse {
+            insight_id: insight.insight_id,
+            insight_title: insight.insight_title,
+            insight_company: insight.insight_company,
+            insight_role: insight.insight_role,
+            insight_tags: insight.insight_tags,
+            insight_description: insight.insight_description,
+            insight_picture_urls: insight.insight_picture_urls,
+            insight_focus_points: insight.insight_focus_points,
+            created_at: insight.created_at,
+        }
+    }).collect();
+
     (
         StatusCode::OK,
         Json(json!({
-            "insights":result.unwrap(),
+            "insights": insights,
         })),
     )
         .into_response()
@@ -314,10 +347,10 @@ pub async fn get_recent_insights(
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({
-                    "error":"Database connection failed"
+                    "error": "Database connection failed"
                 })),
             )
-                .into_response();
+            .into_response();
         }
     };
 
@@ -330,19 +363,33 @@ pub async fn get_recent_insights(
         return (
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(json!({
-                "error":e.to_string(),
+                "error": e.to_string(),
             })),
         )
-            .into_response();
+        .into_response();
     };
+
+    let insights: Vec<InsightResponse> = result.unwrap().into_iter().map(|insight| {
+        InsightResponse {
+            insight_id: insight.insight_id,
+            insight_title: insight.insight_title,
+            insight_company: insight.insight_company,
+            insight_role: insight.insight_role,
+            insight_tags: insight.insight_tags,
+            insight_description: insight.insight_description,
+            insight_picture_urls: insight.insight_picture_urls,
+            insight_focus_points: insight.insight_focus_points,
+            created_at: insight.created_at,
+        }
+    }).collect();
 
     (
         StatusCode::OK,
         Json(json!({
-            "insights":result.unwrap(),
+            "insights": insights,
         })),
     )
-        .into_response()
+    .into_response()
 }
 
 pub async fn get_insight_by_id(
