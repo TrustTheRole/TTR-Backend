@@ -17,6 +17,8 @@ pub struct User {
     pub linkedin: Option<String>,
     pub github: Option<String>,
     pub gender: String,
+    pub liked_insights: Vec<String>,
+    pub viewed_insights: Vec<String>,
 }
 
 

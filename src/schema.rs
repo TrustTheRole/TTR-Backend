@@ -109,12 +109,12 @@ diesel::table! {
         github -> Nullable<Varchar>,
         #[max_length = 50]
         gender -> Varchar,
+        liked_insights -> Array<Text>,
+        viewed_insights -> Array<Text>,
     }
 }
 
-diesel::joinable!(insights -> users (user_id));
 diesel::joinable!(likes -> insights (insight_id));
-diesel::joinable!(subscription -> users (user_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     colleges,

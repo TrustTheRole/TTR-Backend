@@ -11,5 +11,7 @@ CREATE TABLE users (
     linkedin VARCHAR(255),
     github VARCHAR(255),
     gender VARCHAR(50) NOT NULL,
+    liked_insights TEXT[] NOT NULL,
+    viewed_insights TEXT[] NOT NULL,
     FOREIGN KEY (college) REFERENCES colleges(college_name)
 );

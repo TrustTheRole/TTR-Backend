@@ -1,16 +1,22 @@
 use amiquip::{Connection, ExchangeDeclareOptions, ExchangeType, Publish};
 use axum::{extract::Query, response::IntoResponse, Extension, Json};
 use diesel::{
-    dsl::sql, query_dsl::methods::{FilterDsl, LimitDsl, OrderDsl}, ExpressionMethods, RunQueryDsl
+    dsl::sql,
+    query_dsl::methods::{FilterDsl, LimitDsl, OrderDsl},
+    ExpressionMethods, RunQueryDsl,
 };
 use hyper::StatusCode;
-use serde::{Serialize,Deserialize};
+use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::sync::Arc;
 
 use crate::{
     db::DbPool,
-    models::{insights::{Insight, InsightQuery, InsightResponse, UpdateInsight}, likes::Likes, user::User},
+    models::{
+        insights::{Insight, InsightQuery, InsightResponse, UpdateInsight},
+        likes::Likes,
+        user::User,
+    },
     utils::{dispatch_email, get_uid, Claims},
 };
 
@@ -227,7 +233,7 @@ pub async fn create_insight(
 
     let insight = Insight {
         insight_id: get_uid(),
-        user_id: claim.sub,
+        user_id: claim.sub.clone(),
         user_name: exising_user.name,
         insight_title: _insight_title,
         insight_company: _insight_company,
@@ -252,13 +258,15 @@ pub async fn create_insight(
             .into_response();
     };
 
-    let insight_stats = Likes{
+    let insight_stats = Likes {
         insight_id: insight.insight_id.clone(),
         like_count: 0,
         view_count: 0,
     };
 
-    let result = diesel::insert_into(crate::schema::likes::dsl::likes).values(&insight_stats).execute(&mut conn);
+    let result = diesel::insert_into(crate::schema::likes::dsl::likes)
+        .values(&insight_stats)
+        .execute(&mut conn);
 
     if let Err(e) = result {
         return (
@@ -306,8 +314,10 @@ pub async fn get_all_insights(Extension(pool): Extension<Arc<DbPool>>) -> impl I
             .into_response();
     };
 
-    let insights: Vec<InsightResponse> = result.unwrap().into_iter().map(|insight| {
-        InsightResponse {
+    let insights: Vec<InsightResponse> = result
+        .unwrap()
+        .into_iter()
+        .map(|insight| InsightResponse {
             insight_id: insight.insight_id,
             insight_title: insight.insight_title,
             insight_company: insight.insight_company,
@@ -317,8 +327,8 @@ pub async fn get_all_insights(Extension(pool): Extension<Arc<DbPool>>) -> impl I
             insight_picture_urls: insight.insight_picture_urls,
             insight_focus_points: insight.insight_focus_points,
             created_at: insight.created_at,
-        }
-    }).collect();
+        })
+        .collect();
 
     (
         StatusCode::OK,
@@ -350,7 +360,7 @@ pub async fn get_recent_insights(
                     "error": "Database connection failed"
                 })),
             )
-            .into_response();
+                .into_response();
         }
     };
 
@@ -366,11 +376,13 @@ pub async fn get_recent_insights(
                 "error": e.to_string(),
             })),
         )
-        .into_response();
+            .into_response();
     };
 
-    let insights: Vec<InsightResponse> = result.unwrap().into_iter().map(|insight| {
-        InsightResponse {
+    let insights: Vec<InsightResponse> = result
+        .unwrap()
+        .into_iter()
+        .map(|insight| InsightResponse {
             insight_id: insight.insight_id,
             insight_title: insight.insight_title,
             insight_company: insight.insight_company,
@@ -380,8 +392,8 @@ pub async fn get_recent_insights(
             insight_picture_urls: insight.insight_picture_urls,
             insight_focus_points: insight.insight_focus_points,
             created_at: insight.created_at,
-        }
-    }).collect();
+        })
+        .collect();
 
     (
         StatusCode::OK,
@@ -389,7 +401,7 @@ pub async fn get_recent_insights(
             "insights": insights,
         })),
     )
-    .into_response()
+        .into_response()
 }
 
 pub async fn get_insight_by_id(
@@ -575,7 +587,7 @@ pub async fn get_insights_by_user_id(
 pub async fn update_insight(
     Extension(pool): Extension<Arc<DbPool>>,
     Json(req): Json<Value>,
-)-> impl IntoResponse {
+) -> impl IntoResponse {
     let mut conn = match pool.get() {
         Ok(connection) => connection,
         Err(e) => {
@@ -591,9 +603,9 @@ pub async fn update_insight(
     };
 
     let _insight_id = match req.get("insight_id") {
-        Some(_i_id)=>match _i_id.as_str(){
-            Some(i_id)=>i_id.to_string(),
-            None=>{
+        Some(_i_id) => match _i_id.as_str() {
+            Some(i_id) => i_id.to_string(),
+            None => {
                 return (
                     StatusCode::BAD_REQUEST,
                     Json(json!({
@@ -603,7 +615,7 @@ pub async fn update_insight(
                     .into_response();
             }
         },
-        None=>{
+        None => {
             return (
                 StatusCode::BAD_REQUEST,
                 Json(json!({
@@ -611,28 +623,34 @@ pub async fn update_insight(
                 })),
             )
                 .into_response();
-            
         }
     };
 
-    let updated_insight = UpdateInsight{
+    let updated_insight = UpdateInsight {
         insight_description: req.get("insight_description").and_then(|v| v.as_str()),
-        insight_focus_points: req.get("insight_focus_points").and_then(|v| serde_json::from_value(v.clone()).ok()),
+        insight_focus_points: req
+            .get("insight_focus_points")
+            .and_then(|v| serde_json::from_value(v.clone()).ok()),
         insight_role: req.get("insight_role").and_then(|v| v.as_str()),
-        insight_tags: req.get("insight_tags").and_then(|v| serde_json::from_value(v.clone()).ok()),
+        insight_tags: req
+            .get("insight_tags")
+            .and_then(|v| serde_json::from_value(v.clone()).ok()),
         insight_title: req.get("insight_title").and_then(|v| v.as_str()),
     };
 
-    match diesel::update(crate::schema::insights::table.filter(crate::schema::insights::insight_id.eq(&_insight_id)))
-        .set(&updated_insight)
-        .execute(&mut conn)
+    match diesel::update(
+        crate::schema::insights::table.filter(crate::schema::insights::insight_id.eq(&_insight_id)),
+    )
+    .set(&updated_insight)
+    .execute(&mut conn)
     {
         Ok(_) => (
             StatusCode::OK,
             Json(json!({
                 "message":"Insight updated successfully"
             })),
-        ).into_response(),
+        )
+            .into_response(),
         Err(e) => {
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
@@ -642,7 +660,6 @@ pub async fn update_insight(
             )
                 .into_response();
         }
-        
     }
 }
 
@@ -859,39 +876,52 @@ pub enum ActionType {
     IncrementLikes,
     DecrementLikes,
     IncrementViews,
-    DecrementViews,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct InsightAction {
     pub insight_id: String,
     pub action_type: ActionType,
+    pub user_id: String,
 }
 
-
-pub async fn modify_insight(Query(query): Query<InsightQuery>)->impl IntoResponse{
-
+pub async fn modify_insight(
+    Query(query): Query<InsightQuery>,
+    Extension(claim): Extension<Claims>,
+) -> impl IntoResponse {
     let action_type = match (query.action.as_str(), query.operation.as_str()) {
         ("like", "increment") => ActionType::IncrementLikes,
         ("like", "decrement") => ActionType::DecrementLikes,
         ("view", "increment") => ActionType::IncrementViews,
-        ("view", "decrement") => ActionType::DecrementViews,
-        _ => return Json("Invalid action or operation").into_response(),
+        _ => {
+            return (
+                StatusCode::NOT_ACCEPTABLE,
+                Json(json!({
+                    "error":"Invalid action"
+                })),
+            )
+                .into_response()
+        }
     };
 
     let action_message = InsightAction {
         insight_id: query.insight_id.clone(),
         action_type,
+        user_id: claim.sub,
     };
 
     let message = serde_json::to_string(&action_message).expect("Failed to serialize");
-    
+
     let connection = Connection::insecure_open("amqp://guest:guest@localhost:5672");
 
     if let Err(e) = connection {
-        return (StatusCode::INTERNAL_SERVER_ERROR,Json(json!({
-            "error":e.to_string()
-        }))).into_response(); 
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({
+                "error":e.to_string()
+            })),
+        )
+            .into_response();
     }
 
     let mut connection = connection.unwrap();
@@ -899,9 +929,13 @@ pub async fn modify_insight(Query(query): Query<InsightQuery>)->impl IntoRespons
     let channel = connection.open_channel(None);
 
     if let Err(e) = channel {
-        return (StatusCode::INTERNAL_SERVER_ERROR,Json(json!({
-            "error":e.to_string()
-        }))).into_response(); 
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({
+                "error":e.to_string()
+            })),
+        )
+            .into_response();
     }
 
     let channel = channel.unwrap();
@@ -913,34 +947,46 @@ pub async fn modify_insight(Query(query): Query<InsightQuery>)->impl IntoRespons
     );
 
     if let Err(e) = exchange {
-        return (StatusCode::INTERNAL_SERVER_ERROR,Json(json!({
-            "error":e.to_string()
-        }))).into_response(); 
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({
+                "error":e.to_string()
+            })),
+        )
+            .into_response();
     }
 
     let exchange = exchange.unwrap();
 
-    let result= exchange.publish(Publish::new(message.as_bytes(), "routing_key"));
+    let result = exchange.publish(Publish::new(message.as_bytes(), "routing_key"));
 
     if let Err(e) = result {
-        return (StatusCode::INTERNAL_SERVER_ERROR,Json(json!({
-            "error":e.to_string()
-        }))).into_response(); 
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({
+                "error":e.to_string()
+            })),
+        )
+            .into_response();
     }
-    (StatusCode::OK,Json(json!({
-        "message":"Action sent to RabbitMQ"
-    }))).into_response()
+    (
+        StatusCode::OK,
+        Json(json!({
+            "message":"Action sent to RabbitMQ"
+        })),
+    )
+        .into_response()
 }
 
-pub fn db_actions_for_insight_stat(body:Json<Value>,pool:Arc<DbPool>){
-    let _insight_id=body["insight_id"].as_str().unwrap();
-    let _action_type:ActionType = match body["action_type"].as_str().unwrap(){
-        "IncrementLikes"=>ActionType::IncrementLikes,
-        "DecrementLikes"=>ActionType::DecrementLikes,
-        "IncrementViews"=>ActionType::IncrementViews,
-        "DecrementViews"=>ActionType::DecrementViews,
-        _=>return
+pub fn db_actions_for_insight_stat(body: Json<Value>, pool: Arc<DbPool>) {
+    let _insight_id = body["insight_id"].as_str().unwrap();
+    let _action_type: ActionType = match body["action_type"].as_str().unwrap() {
+        "IncrementLikes" => ActionType::IncrementLikes,
+        "DecrementLikes" => ActionType::DecrementLikes,
+        "IncrementViews" => ActionType::IncrementViews,
+        _ => return,
     };
+    let _user_id = body["user_id"].as_str().unwrap();
 
     let mut conn = match pool.get() {
         Ok(connection) => connection,
@@ -950,7 +996,6 @@ pub fn db_actions_for_insight_stat(body:Json<Value>,pool:Arc<DbPool>){
         }
     };
 
-
     use crate::schema::likes;
     match _action_type {
         ActionType::IncrementLikes => {
@@ -958,24 +1003,87 @@ pub fn db_actions_for_insight_stat(body:Json<Value>,pool:Arc<DbPool>){
                 .set(likes::like_count.eq(likes::like_count + 1))
                 .execute(&mut conn)
                 .expect("Failed to increment likes");
+
+            let existing_user:User = match crate::schema::users::dsl::users
+                .filter(crate::schema::users::user_id.eq(&_user_id))
+                .first::<User>(&mut conn)
+            {
+                Ok(e_user) => e_user,
+                Err(e) => {
+                    tracing::debug!("{}", e);
+                    return;
+                }
+            };
+
+            if !existing_user.liked_insights.contains(&(_insight_id.to_string())){
+                let mut new_liked_insights=existing_user.liked_insights.clone();
+                new_liked_insights.push(_insight_id.to_string());
+
+                diesel::update(crate::schema::users::table.filter(crate::schema::users::user_id.eq(_user_id)))
+                .set(crate::schema::users::liked_insights.eq(new_liked_insights))
+                .execute(&mut conn)
+                .expect("Failed to update liked insights");
+            }
+
+
         }
         ActionType::DecrementLikes => {
             diesel::update(likes::table.filter(likes::insight_id.eq(_insight_id)))
                 .set(likes::like_count.eq(sql("GREATEST(like_count - 1, 0)")))
                 .execute(&mut conn)
                 .expect("Failed to decrement likes");
+
+                let existing_user:User = match crate::schema::users::dsl::users
+                .filter(crate::schema::users::user_id.eq(&_user_id))
+                .first::<User>(&mut conn)
+            {
+                Ok(e_user) => e_user,
+                Err(e) => {
+                    tracing::debug!("{}", e);
+                    return;
+                }
+            };
+
+            if existing_user.liked_insights.contains(&(_insight_id.to_string())){
+                let new_liked_insights: Vec<String> = existing_user
+                .liked_insights
+                .into_iter()
+                .filter(|insight| insight != &_insight_id)
+                .collect();
+
+                diesel::update(crate::schema::users::table.filter(crate::schema::users::user_id.eq(_user_id)))
+                .set(crate::schema::users::liked_insights.eq(new_liked_insights))
+                .execute(&mut conn)
+                .expect("Failed to update liked insights");
+            }
+            
         }
         ActionType::IncrementViews => {
             diesel::update(likes::table.filter(likes::insight_id.eq(_insight_id)))
                 .set(likes::view_count.eq(likes::view_count + 1))
                 .execute(&mut conn)
                 .expect("Failed to increment views");
-        }
-        ActionType::DecrementViews => {
-            diesel::update(likes::table.filter(likes::insight_id.eq(_insight_id)))
-                .set(likes::view_count.eq(sql("GREATEST(view_count - 1, 0)")))
+
+                let existing_user:User = match crate::schema::users::dsl::users
+                .filter(crate::schema::users::user_id.eq(&_user_id))
+                .first::<User>(&mut conn)
+            {
+                Ok(e_user) => e_user,
+                Err(e) => {
+                    tracing::debug!("{}", e);
+                    return;
+                }
+            };
+
+            if !existing_user.viewed_insights.contains(&(_insight_id.to_string())){
+                let mut new_viewed_insights=existing_user.viewed_insights.clone();
+                new_viewed_insights.push(_insight_id.to_string());
+
+                diesel::update(crate::schema::users::table.filter(crate::schema::users::user_id.eq(_user_id)))
+                .set(crate::schema::users::viewed_insights.eq(new_viewed_insights))
                 .execute(&mut conn)
-                .expect("Failed to decrement views");
+                .expect("Failed to update liked insights");
+            }
         }
     }
 }

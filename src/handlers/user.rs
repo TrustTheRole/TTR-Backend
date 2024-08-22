@@ -140,6 +140,8 @@ pub async fn register(
         phone: user_phone,
         gender: user_gender,
         role: user_role,
+        liked_insights: vec![],
+        viewed_insights: vec![],
     };
 
     let mut conn = match pool.get() {

@@ -24,12 +24,12 @@ pub fn create_route(pool: Arc<DbPool>) -> Router {
                 .route("/create", post(create_insight))
                 .route("/delete", delete(delete_insight))
                 .route("/update", patch(update_insight))
+                .route("/modify-stat", get(modify_insight))
                 .route_layer(middleware::from_fn(auth_middleware))
                 .route("/get-all", get(get_all_insights))
                 .route("/get-insight-userid", get(get_insights_by_user_id))
                 .route("/get-insight", get(get_insight_by_id))
                 .route("/get-recent-insights", get(get_recent_insights))
-                .route("/like", get(modify_insight)),
         )
         .layer(Extension(pool))
 }

@@ -28,7 +28,7 @@ pub fn connect_to_rabbitmq(pool:Arc<diesel::r2d2::Pool<diesel::r2d2::ConnectionM
             ConsumerMessage::Delivery(delivery) => {
                 let body = String::from_utf8_lossy(&delivery.body);
                 let body=serde_json::from_str::<serde_json::Value>(&body).expect("Failed to parse JSON");
-                println!("({:>3}) Received [{}]", i, body["action_type"]);
+                println!("({:>3}) Received [{}]", i, body);
                 db_actions_for_insight_stat(Json(body),pool.clone());
                 consumer.ack(delivery)?;
             }
