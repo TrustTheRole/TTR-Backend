@@ -1,5 +1,6 @@
 pub mod config;
 pub mod db;
+pub mod rabbitmq;
 
 pub mod handlers;
 pub mod middlewares;

@@ -33,6 +33,13 @@ pub struct InsightResponse {
     pub created_at: NaiveDateTime,
 }
 
+#[derive(Deserialize)]
+pub struct InsightQuery {
+    pub insight_id: String,
+    pub action: String,
+    pub operation: String,
+}
+
 #[derive(AsChangeset)]
 #[diesel(table_name = insights)]
 pub struct UpdateInsight<'a> {

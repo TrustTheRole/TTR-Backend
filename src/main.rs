@@ -4,6 +4,7 @@ use tracing_subscriber::EnvFilter;
 use ttr::{
     config::{self},
     db,
+    rabbitmq,
     routes::create_routes,
 };
 
@@ -15,7 +16,16 @@ async fn main() {
         .init();
 
     let pool = Arc::new(db::establish_connection());
-    let app = create_routes(pool);
+    let app = create_routes(pool.clone());
+
+    tokio::spawn(async move{
+        let result = rabbitmq::connect_to_rabbitmq(pool);
+        if let Err(e) = result {
+            tracing::error!("Error connecting to RabbitMQ: {:?}", e);
+        }
+    });
+
+
     let addr = SocketAddr::from(([127, 0, 0, 1], 8080));
     tracing::debug!("Server connected and listening on {}", addr);
 

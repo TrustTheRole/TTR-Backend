@@ -1,16 +1,16 @@
+use amiquip::{Connection, ExchangeDeclareOptions, ExchangeType, Publish};
 use axum::{extract::Query, response::IntoResponse, Extension, Json};
 use diesel::{
-    query_dsl::methods::{FilterDsl, LimitDsl, OrderDsl},
-    ExpressionMethods, RunQueryDsl,
+    dsl::sql, query_dsl::methods::{FilterDsl, LimitDsl, OrderDsl}, ExpressionMethods, RunQueryDsl
 };
 use hyper::StatusCode;
-use serde::Deserialize;
+use serde::{Serialize,Deserialize};
 use serde_json::{json, Value};
 use std::sync::Arc;
 
 use crate::{
     db::DbPool,
-    models::{insights::{Insight, InsightResponse, UpdateInsight}, likes::Likes, user::User},
+    models::{insights::{Insight, InsightQuery, InsightResponse, UpdateInsight}, likes::Likes, user::User},
     utils::{dispatch_email, get_uid, Claims},
 };
 
@@ -852,4 +852,130 @@ pub async fn disaprove(
         })),
     )
         .into_response()
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub enum ActionType {
+    IncrementLikes,
+    DecrementLikes,
+    IncrementViews,
+    DecrementViews,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct InsightAction {
+    pub insight_id: String,
+    pub action_type: ActionType,
+}
+
+
+pub async fn modify_insight(Query(query): Query<InsightQuery>)->impl IntoResponse{
+
+    let action_type = match (query.action.as_str(), query.operation.as_str()) {
+        ("like", "increment") => ActionType::IncrementLikes,
+        ("like", "decrement") => ActionType::DecrementLikes,
+        ("view", "increment") => ActionType::IncrementViews,
+        ("view", "decrement") => ActionType::DecrementViews,
+        _ => return Json("Invalid action or operation").into_response(),
+    };
+
+    let action_message = InsightAction {
+        insight_id: query.insight_id.clone(),
+        action_type,
+    };
+
+    let message = serde_json::to_string(&action_message).expect("Failed to serialize");
+    
+    let connection = Connection::insecure_open("amqp://guest:guest@localhost:5672");
+
+    if let Err(e) = connection {
+        return (StatusCode::INTERNAL_SERVER_ERROR,Json(json!({
+            "error":e.to_string()
+        }))).into_response(); 
+    }
+
+    let mut connection = connection.unwrap();
+
+    let channel = connection.open_channel(None);
+
+    if let Err(e) = channel {
+        return (StatusCode::INTERNAL_SERVER_ERROR,Json(json!({
+            "error":e.to_string()
+        }))).into_response(); 
+    }
+
+    let channel = channel.unwrap();
+
+    let exchange = channel.exchange_declare(
+        ExchangeType::Direct,
+        "insight_actions_exchange",
+        ExchangeDeclareOptions::default(),
+    );
+
+    if let Err(e) = exchange {
+        return (StatusCode::INTERNAL_SERVER_ERROR,Json(json!({
+            "error":e.to_string()
+        }))).into_response(); 
+    }
+
+    let exchange = exchange.unwrap();
+
+    let result= exchange.publish(Publish::new(message.as_bytes(), "routing_key"));
+
+    if let Err(e) = result {
+        return (StatusCode::INTERNAL_SERVER_ERROR,Json(json!({
+            "error":e.to_string()
+        }))).into_response(); 
+    }
+    (StatusCode::OK,Json(json!({
+        "message":"Action sent to RabbitMQ"
+    }))).into_response()
+}
+
+pub fn db_actions_for_insight_stat(body:Json<Value>,pool:Arc<DbPool>){
+    let _insight_id=body["insight_id"].as_str().unwrap();
+    let _action_type:ActionType = match body["action_type"].as_str().unwrap(){
+        "IncrementLikes"=>ActionType::IncrementLikes,
+        "DecrementLikes"=>ActionType::DecrementLikes,
+        "IncrementViews"=>ActionType::IncrementViews,
+        "DecrementViews"=>ActionType::DecrementViews,
+        _=>return
+    };
+
+    let mut conn = match pool.get() {
+        Ok(connection) => connection,
+        Err(e) => {
+            tracing::debug!("{}", e);
+            return;
+        }
+    };
+
+
+    use crate::schema::likes;
+    match _action_type {
+        ActionType::IncrementLikes => {
+            diesel::update(likes::table.filter(likes::insight_id.eq(_insight_id)))
+                .set(likes::like_count.eq(likes::like_count + 1))
+                .execute(&mut conn)
+                .expect("Failed to increment likes");
+        }
+        ActionType::DecrementLikes => {
+            diesel::update(likes::table.filter(likes::insight_id.eq(_insight_id)))
+                .set(likes::like_count.eq(sql("GREATEST(like_count - 1, 0)")))
+                .execute(&mut conn)
+                .expect("Failed to decrement likes");
+        }
+        ActionType::IncrementViews => {
+            diesel::update(likes::table.filter(likes::insight_id.eq(_insight_id)))
+                .set(likes::view_count.eq(likes::view_count + 1))
+                .execute(&mut conn)
+                .expect("Failed to increment views");
+        }
+        ActionType::DecrementViews => {
+            diesel::update(likes::table.filter(likes::insight_id.eq(_insight_id)))
+                .set(likes::view_count.eq(sql("GREATEST(view_count - 1, 0)")))
+                .execute(&mut conn)
+                .expect("Failed to decrement views");
+        }
+    }
 }

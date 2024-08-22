@@ -9,8 +9,7 @@ use axum::{
 use crate::{
     db::DbPool,
     handlers::insights::{
-        create_insight, delete_insight, disaprove, get_all_insights, get_insight_by_id,
-        get_insights_by_user_id, get_recent_insights, update_insight,
+        create_insight, delete_insight, disaprove, get_all_insights, get_insight_by_id, get_insights_by_user_id, get_recent_insights, modify_insight, update_insight
     },
     middlewares::auth::{auth_middleware, check_superadmin},
 };
@@ -29,7 +28,8 @@ pub fn create_route(pool: Arc<DbPool>) -> Router {
                 .route("/get-all", get(get_all_insights))
                 .route("/get-insight-userid", get(get_insights_by_user_id))
                 .route("/get-insight", get(get_insight_by_id))
-                .route("/get-recent-insights", get(get_recent_insights)),
+                .route("/get-recent-insights", get(get_recent_insights))
+                .route("/like", get(modify_insight)),
         )
         .layer(Extension(pool))
 }
