@@ -587,6 +587,7 @@ pub async fn get_insights_by_user_id(
 pub async fn update_insight(
     Extension(pool): Extension<Arc<DbPool>>,
     Json(req): Json<Value>,
+    Extension(claim): Extension<Claims>
 ) -> impl IntoResponse {
     let mut conn = match pool.get() {
         Ok(connection) => connection,
@@ -625,6 +626,32 @@ pub async fn update_insight(
                 .into_response();
         }
     };
+
+    let existing_insight = match crate::schema::insights::dsl::insights
+        .filter(crate::schema::insights::insight_id.eq(&_insight_id))
+        .first::<Insight>(&mut conn)
+    {
+        Ok(insight) => insight,
+        Err(e) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": e.to_string(),
+                })),
+            )
+                .into_response();
+        }
+    };
+
+    if existing_insight.user_id != claim.sub {
+        return (
+            StatusCode::UNAUTHORIZED,
+            Json(json!({
+                "error":"You are not authorized to update this insight"
+            })),
+        )
+            .into_response();
+    }
 
     let updated_insight = UpdateInsight {
         insight_description: req.get("insight_description").and_then(|v| v.as_str()),
