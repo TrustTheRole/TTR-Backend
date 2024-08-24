@@ -5,7 +5,8 @@ use std::sync::Arc;
 use crate::handlers::insights::db_actions_for_insight_stat;
 
 pub fn connect_to_rabbitmq(pool:Arc<diesel::r2d2::Pool<diesel::r2d2::ConnectionManager<diesel::PgConnection>>>) -> amiquip::Result<()> {
-    let mut connection = Connection::insecure_open("amqp://guest:guest@localhost:5672")?;
+    let rabbitmq_url = std::env::var("RABBITMQ_URL").unwrap_or("amqp://guest:guest@localhost:5672".to_string());
+    let mut connection = Connection::insecure_open(rabbitmq_url.as_str())?;
 
     let channel = connection.open_channel(None)?;
 
