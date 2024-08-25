@@ -533,7 +533,6 @@ pub async fn send_newsletter(
 pub async fn get_all_companies(
     Extension(pool): Extension<Arc<DbPool>>,
 ) -> impl IntoResponse {
-    // Establish a connection to the database
     let mut conn = match pool.get() {
         Ok(conn) => conn,
         Err(e) => {
@@ -548,11 +547,9 @@ pub async fn get_all_companies(
         }
     };
 
-    // Query the database to retrieve all companies
     let companies = crate::schema::companies::dsl::companies
         .load::<Companies>(&mut conn);
 
-    // Handle errors if the query fails
     if let Err(e) = companies {
         return (
             StatusCode::INTERNAL_SERVER_ERROR,
@@ -563,7 +560,6 @@ pub async fn get_all_companies(
             .into_response();
     }
 
-    // Return the companies as a JSON response
     (
         StatusCode::OK,
         Json(json!({
