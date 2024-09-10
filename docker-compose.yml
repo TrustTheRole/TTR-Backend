@@ -1,0 +1,39 @@
+version: "3.8"
+
+services:
+  db:
+    image: postgres:14
+    container_name: ttr_database
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ttr_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: ttr_rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    
+  app:
+    image: darkninja1518/trustherole_backend:v1.0
+    container_name: ttr_backend_app
+    depends_on:
+      - db
+      - rabbitmq
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    entrypoint:
+      [
+        "/bin/sh",
+        "-c",
+        "chmod +x /usr/src/app/entrypoint.sh && /usr/src/app/entrypoint.sh",
+      ]
+
+volumes:
+  postgres_data:
