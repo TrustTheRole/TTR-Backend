@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use amiquip::{Connection, ExchangeDeclareOptions, ExchangeType, Publish};
 use axum::{http::Request, response::IntoResponse, Extension, Json};
 use diesel::OptionalExtension;
 use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl};
@@ -7,6 +8,7 @@ use hyper::StatusCode;
 use log::debug;
 use serde_json::{json, Value};
 
+use crate::models::actions::EmailAction;
 use crate::{
     db::DbPool,
     models::{
@@ -14,10 +16,11 @@ use crate::{
         user::{UpdateUser, User},
     },
     schema::colleges::{college_name, id, students_registered},
-    utils::{dispatch_email, generate_token, get_uid, Claims},
+    utils::{generate_token, get_uid, Claims},
 };
 
 use crate::schema::users::dsl::*;
+
 
 pub async fn register(
     Extension(decrypted_json): Extension<Value>,
@@ -221,10 +224,9 @@ pub async fn register(
     }
     let token = token.unwrap();
 
-    tokio::spawn(async move {
-        let message = "Welcome to the community".to_string();
+    let message = "Welcome to the community".to_string();
 
-        let html_content = r#"
+    let html_content = r#"
             <body style="margin: 0; padding: 0; background-color: #f4f4f4;">
             <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
                 <tr>
@@ -268,16 +270,73 @@ pub async fn register(
         </body>
     "#;
 
-    // Send email
-    dispatch_email(
-        &user_name,
-        &user_email,
-        &message,
-        "Welcome to the TTR Community".to_string(),
-        &html_content,
-    ).await;
+    let email_action = EmailAction {
+        user_name: user_name.clone(),
+        user_email: user_email.clone(),
+        message: message.clone(),
+        subject: "Welcome to the TTR Community".to_string(),
+        html_content: html_content.to_string(),
+    };
 
-    });
+    let message = serde_json::to_string(&email_action).expect("Failed to serialize email action");
+
+    let connection = Connection::insecure_open(std::env::var("RABBITMQ_URL").unwrap().as_str());
+
+    if let Err(e) = connection {
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({
+                "error":e.to_string()
+            })),
+        )
+            .into_response();
+    }
+
+    let mut connection = connection.unwrap();
+
+    let channel = connection.open_channel(None);
+
+    if let Err(e) = channel {
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({
+                "error":e.to_string()
+            })),
+        )
+            .into_response();
+    }
+
+    let channel = channel.unwrap();
+
+    let exchange = channel.exchange_declare(
+        ExchangeType::Direct,
+        "email_actions_exchange",
+        ExchangeDeclareOptions::default(),
+    );
+
+    if let Err(e) = exchange {
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({
+                "error":e.to_string()
+            })),
+        )
+            .into_response();
+    }
+
+    let exchange = exchange.unwrap();
+
+    let result = exchange.publish(Publish::new(message.as_bytes(), "routing_key"));
+
+    if let Err(e) = result {
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({
+                "error":e.to_string()
+            })),
+        )
+            .into_response();
+    }
 
     (
         StatusCode::CREATED,

@@ -1,6 +1,6 @@
 use std::{net::SocketAddr, sync::Arc};
 
-use log::{debug, error};
+use log::debug;
 use env_logger;
 use ttr::{
     config::{self},
@@ -16,12 +16,7 @@ async fn main() {
     let pool = Arc::new(db::establish_connection());
     let app = create_routes(pool.clone());
 
-    tokio::spawn(async move{
-        let result = rabbitmq::connect_to_rabbitmq(pool);
-        if let Err(e) = result {
-            error!("Error connecting to rabbitmq: {:?}", e);
-        }
-    });
+    rabbitmq::connect_rabbitmq_services(pool);
 
 
     let addr = SocketAddr::from(([0, 0, 0, 0], 8080));

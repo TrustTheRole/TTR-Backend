@@ -2,6 +2,7 @@ use chrono::{Duration, Utc};
 use diesel::{deserialize::FromSqlRow, expression::AsExpression, query_dsl::methods::FilterDsl, r2d2::{ConnectionManager, PooledConnection}, sql_types::Text, ExpressionMethods, PgConnection, RunQueryDsl};
 use jsonwebtoken::{decode, encode, errors::Error, DecodingKey, EncodingKey, Header};
 use lettre::{transport::smtp::authentication::Credentials, Message, SmtpTransport, Transport};
+use log::debug;
 use serde::{Deserialize, Serialize};
 use std::env;
 use uuid::Uuid;
@@ -64,8 +65,8 @@ pub fn validate_token(token: &str) -> Result<Claims, jsonwebtoken::errors::Error
 }
 
 pub async fn dispatch_email(fullname: &str, email: &str, message: &str, email_subject: String, html_content: &str) {
-    println!("Sending email to {}", email);
-    println!("Full Name: {}", fullname);
+    debug!("Sending email to {}", email);
+    debug!("Full Name: {}", fullname);
 
     let admin_email = env::var("SMTP_USERNAME").expect("SMTP_USERNAME not specified");
     let admin_name = env::var("ADMIN_NAME").expect("ADMIN_NAME not specified");
@@ -100,8 +101,8 @@ pub async fn dispatch_email(fullname: &str, email: &str, message: &str, email_su
         .build();
 
     match mailer.send(&email) {
-        Ok(_) => println!("Email sent successfully!"),
-        Err(e) => eprintln!("Could not send email: {:?}", e),
+        Ok(_) => debug!("Email sent successfully!"),
+        Err(e) => debug!("Could not send email: {:?}", e),
     }
 }
 

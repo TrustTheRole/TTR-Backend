@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use amiquip::{Connection, ExchangeDeclareOptions, ExchangeType, Publish};
 use axum::{response::IntoResponse, Extension, Json};
 use diesel::RunQueryDsl;
 use futures::future::join_all;
@@ -9,8 +10,8 @@ use serde_json::{json, Value};
 
 use crate::{
     db::DbPool,
-    models::
-        misc::{colleges::College, companies::Companies, newsletter_sub::NewsletterSub}
+    models::{actions::EmailAction, 
+        misc::{colleges::College, companies::Companies, newsletter_sub::NewsletterSub}}
     ,
     utils::{dispatch_email, get_uid},
 };
@@ -505,21 +506,72 @@ pub async fn send_newsletter(
 
     let subject = "Welcome to our monthly newsletter!".to_string();
 
-    // dispatch mail in batches of 10
+    let connection = Connection::insecure_open(std::env::var("RABBITMQ_URL").unwrap().as_str());
 
-    for chunk in subscribers.chunks(10) {
-        let mut futures = vec![];
-        for subscriber in chunk {
-            futures.push(dispatch_email(
-                "User",
-                &subscriber.email,
-                &message,
-                subject.clone(),
-                &html_content,
-            ));
+    if let Err(e) = connection {
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({
+                "error":e.to_string()
+            })),
+        )
+            .into_response();
+    }
+
+    let mut connection = connection.unwrap();
+
+    let channel = connection.open_channel(None);
+
+    if let Err(e) = channel {
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({
+                "error":e.to_string()
+            })),
+        )
+            .into_response();
+    }
+
+    let channel = channel.unwrap();
+
+    let exchange = channel.exchange_declare(
+        ExchangeType::Direct,
+        "email_actions_exchange",
+        ExchangeDeclareOptions::default(),
+    );
+
+    if let Err(e) = exchange {
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({
+                "error":e.to_string()
+            })),
+        )
+            .into_response();
+    }
+
+    let exchange = exchange.unwrap();
+
+    for subsriber in &subscribers {
+        let email_action = EmailAction{
+            user_name: "User".to_string(),
+            user_email: subsriber.email.clone(),
+            message: message.clone(),
+            subject: subject.clone(),
+            html_content: html_content.clone(),
+        };
+        let message = serde_json::to_string(&email_action).expect("Failed to serialize email action");
+        let result = exchange.publish(Publish::new(message.as_bytes(), "routing_key"));
+
+        if let Err(e) = result {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error":e.to_string()
+                })),
+            )
+                .into_response();
         }
-        // Send emails concurrently within the batch
-        let _results = join_all(futures).await;
     }
 
     (

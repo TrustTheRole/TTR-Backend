@@ -14,9 +14,7 @@ use std::sync::Arc;
 use crate::{
     db::DbPool,
     models::{
-        insights::{Insight, InsightQuery, InsightResponse, UpdateInsight},
-        likes::Likes,
-        user::User,
+        actions::ActionType, insights::{Insight, InsightQuery, InsightResponse, UpdateInsight}, likes::Likes, user::User
     },
     utils::{dispatch_email, get_uid, Claims},
 };
@@ -191,13 +189,13 @@ pub async fn create_insight(
                 .into_response();
         }
     };
-    println!("{}", _insight_company);
-    println!("{}", _insight_title);
-    println!("{}", _insight_role);
-    println!("{}", _insight_description);
-    println!("{:?}", _insight_picture_urls);
-    println!("{:?}", _insight_focus_points);
-    println!("{:?}", _insight_tags);
+    debug!("{}", _insight_company);
+    debug!("{}", _insight_title);
+    debug!("{}", _insight_role);
+    debug!("{}", _insight_description);
+    debug!("{:?}", _insight_picture_urls);
+    debug!("{:?}", _insight_focus_points);
+    debug!("{:?}", _insight_tags);
 
     let mut conn = match pool.get() {
         Ok(connection) => connection,
@@ -212,7 +210,7 @@ pub async fn create_insight(
                 .into_response();
         }
     };
-    println!("{}", claim.sub);
+    debug!("{}", claim.sub);
 
     // extract_tags(&_insight_tags, &mut conn);
 
@@ -901,12 +899,7 @@ pub async fn disaprove(
         .into_response()
 }
 
-#[derive(Debug, Deserialize, Serialize)]
-pub enum ActionType {
-    IncrementLikes,
-    DecrementLikes,
-    IncrementViews,
-}
+
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct InsightAction {
@@ -942,7 +935,7 @@ pub async fn modify_insight(
 
     let message = serde_json::to_string(&action_message).expect("Failed to serialize");
 
-    let connection = Connection::insecure_open("amqp://guest:guest@localhost:5672");
+    let connection = Connection::insecure_open(std::env::var("RABBITMQ_URL").unwrap().as_str());
 
     if let Err(e) = connection {
         return (

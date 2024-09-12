@@ -19,7 +19,10 @@ services:
       RABBITMQ_DEFAULT_PASS: guest
     
   app:
-    image: darkninja1518/trustherole_backend:v1.0
+    # image: darkninja1518/trustherole_backend:v1.0
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: ttr_backend_app
     depends_on:
       - db
