@@ -1,6 +1,7 @@
 use axum::{extract::Query, response::IntoResponse, Extension, Json};
 use diesel::prelude::*;
 use hyper::StatusCode;
+use log::debug;
 use serde_json::{json, Value};
 
 use crate::{db::DbPool, models::likes::Likes};
@@ -37,7 +38,7 @@ pub async fn get_stats(
     let mut conn = match pool.get() {
         Ok(connection) => connection,
         Err(e) => {
-            tracing::debug!("{}", e);
+            debug!("{}", e);
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({

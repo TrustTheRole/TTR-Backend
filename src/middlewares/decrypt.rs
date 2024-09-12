@@ -6,6 +6,7 @@ use axum::{
     Json,
 };
 use base64::{engine::general_purpose, Engine};
+use log::debug;
 use rsa::{pkcs1::DecodeRsaPrivateKey, Oaep, RsaPrivateKey};
 use serde_json::{json, Value};
 use sha2::Sha256;
@@ -22,7 +23,7 @@ where
     let key_path = match env::var("KEY_PATH") {
         Ok(path) => path,
         Err(e) => {
-            tracing::debug!("{}", e);
+            debug!("{}", e);
             return Err((
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({
@@ -35,7 +36,7 @@ where
     let private_key_pem = match fs::read_to_string(key_path) {
         Ok(private_pem) => private_pem,
         Err(e) => {
-            tracing::debug!("{}", e);
+            debug!("{}", e);
             return Err((
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({
@@ -156,7 +157,7 @@ where
         }
     };
 
-    tracing::debug!("{}", decrypted_json);
+    debug!("{}", decrypted_json);
 
     let mut request = Request::from_parts(parts, Body::from(bytes));
     request.extensions_mut().insert(decrypted_json);

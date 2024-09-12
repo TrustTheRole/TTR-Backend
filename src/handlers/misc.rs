@@ -4,6 +4,7 @@ use axum::{response::IntoResponse, Extension, Json};
 use diesel::RunQueryDsl;
 use futures::future::join_all;
 use hyper::StatusCode;
+use log::debug;
 use serde_json::{json, Value};
 
 use crate::{
@@ -68,7 +69,7 @@ pub async fn add_college_name(
     let mut conn = match pool.get() {
         Ok(connection) => connection,
         Err(e) => {
-            tracing::debug!("{}", e);
+            debug!("{}", e);
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({
@@ -92,7 +93,7 @@ pub async fn add_college_name(
     {
         Ok(_) => (),
         Err(e) => {
-            tracing::debug!("{}", e);
+            debug!("{}", e);
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({
@@ -149,7 +150,7 @@ pub async fn add_company_name(
     let mut conn = match pool.get() {
         Ok(connection) => connection,
         Err(e) => {
-            tracing::debug!("{}", e);
+            debug!("{}", e);
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({
@@ -166,7 +167,7 @@ pub async fn add_company_name(
     {
         Ok(_) => (),
         Err(e) => {
-            tracing::debug!("{}", e);
+            debug!("{}", e);
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({
@@ -218,7 +219,7 @@ pub async fn subscibe_to_newsletter(
     let mut conn = match pool.get() {
         Ok(conn) => conn,
         Err(e) => {
-            tracing::debug!("{:?}", e);
+            debug!("{:?}", e);
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({
@@ -238,7 +239,7 @@ pub async fn subscibe_to_newsletter(
         .values(&newsletter)
         .execute(&mut conn)
     {
-        tracing::debug!("{:?}", e);
+        debug!("{:?}", e);
         return (
             StatusCode::BAD_REQUEST,
             Json(json!({
@@ -263,7 +264,7 @@ pub async fn get_newsletter_subscibers(
     let mut conn = match pool.get() {
         Ok(conn) => conn,
         Err(e) => {
-            tracing::debug!("{:?}", e);
+            debug!("{:?}", e);
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({
@@ -300,7 +301,7 @@ pub async fn get_all_tags(Extension(pool): Extension<Arc<DbPool>>) -> impl IntoR
     let mut conn = match pool.get() {
         Ok(conn) => conn,
         Err(e) => {
-            tracing::debug!("{:?}", e);
+            debug!("{:?}", e);
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({
@@ -334,7 +335,7 @@ pub async fn get_colleges(Extension(pool): Extension<Arc<DbPool>>) -> impl IntoR
     let mut conn = match pool.get() {
         Ok(conn) => conn,
         Err(e) => {
-            tracing::debug!("{:?}", e);
+            debug!("{:?}", e);
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({
@@ -445,7 +446,7 @@ pub async fn send_newsletter(
     let mut conn = match pool.get() {
         Ok(conn) => conn,
         Err(e) => {
-            tracing::debug!("{:?}", e);
+            debug!("{:?}", e);
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({
@@ -536,7 +537,7 @@ pub async fn get_all_companies(
     let mut conn = match pool.get() {
         Ok(conn) => conn,
         Err(e) => {
-            tracing::debug!("{:?}", e);
+            debug!("{:?}", e);
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({

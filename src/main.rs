@@ -1,6 +1,7 @@
 use std::{net::SocketAddr, sync::Arc};
 
-use tracing_subscriber::EnvFilter;
+use log::{debug, error};
+use env_logger;
 use ttr::{
     config::{self},
     db,
@@ -11,23 +12,20 @@ use ttr::{
 #[tokio::main]
 async fn main() {
     config::init();
-    tracing_subscriber::fmt()
-        .with_env_filter(EnvFilter::from("debug"))
-        .init();
-
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("debug")).init();
     let pool = Arc::new(db::establish_connection());
     let app = create_routes(pool.clone());
 
     tokio::spawn(async move{
         let result = rabbitmq::connect_to_rabbitmq(pool);
         if let Err(e) = result {
-            tracing::error!("Error connecting to RabbitMQ: {:?}", e);
+            error!("Error connecting to rabbitmq: {:?}", e);
         }
     });
 
 
     let addr = SocketAddr::from(([0, 0, 0, 0], 8080));
-    tracing::debug!("Server connected and listening on {}", addr);
+    debug!("Server connected and listening on {}", addr);
 
     axum::Server::bind(&addr)
         .serve(app.into_make_service())

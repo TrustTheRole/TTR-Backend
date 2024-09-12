@@ -44,11 +44,11 @@ diesel::table! {
         insight_company -> Varchar,
         #[max_length = 255]
         insight_role -> Varchar,
-        insight_tags -> Array<Nullable<Text>>,
+        insight_tags -> Array<Text>,
         insight_description -> Text,
-        insight_picture_urls -> Array<Nullable<Text>>,
-        insight_focus_points -> Array<Nullable<Text>>,
-        created_at -> Nullable<Timestamp>,
+        insight_picture_urls -> Array<Text>,
+        insight_focus_points -> Array<Text>,
+        created_at -> Timestamp,
     }
 }
 
@@ -65,7 +65,7 @@ diesel::table! {
     newsletter_sub (email) {
         #[max_length = 255]
         email -> Varchar,
-        created_at -> Nullable<Timestamp>,
+        created_at -> Timestamp,
     }
 }
 
@@ -82,7 +82,7 @@ diesel::table! {
     tags (name) {
         #[max_length = 255]
         name -> Varchar,
-        created_at -> Nullable<Timestamp>,
+        created_at -> Timestamp,
     }
 }
 
@@ -109,8 +109,8 @@ diesel::table! {
         github -> Nullable<Varchar>,
         #[max_length = 50]
         gender -> Varchar,
-        liked_insights -> Array<Nullable<Text>>,
-        viewed_insights -> Array<Nullable<Text>>,
+        liked_insights -> Array<Text>,
+        viewed_insights -> Array<Text>,
     }
 }
 

@@ -6,6 +6,7 @@ use axum::{
 };
 use diesel::{query_dsl::methods::FilterDsl, RunQueryDsl};
 use diesel::ExpressionMethods;
+use log::debug;
 use serde_json::json;
 use std::sync::Arc;
 
@@ -49,7 +50,7 @@ pub async fn auth_middleware<B>(
                 .into_response()
         })?;
 
-    tracing::debug!("auth_token: {:?}", auth_token);
+    debug!("auth_token: {:?}", auth_token);
 
     let is_valid = validate_token(auth_token).map_err(|_| {
         (
@@ -112,7 +113,7 @@ pub async fn check_superadmin<B>(
                 .into_response()
         })?;
 
-    tracing::debug!("auth_token: {:?}", auth_token);
+    debug!("auth_token: {:?}", auth_token);
 
     let is_valid = validate_token(auth_token).map_err(|_| {
         (
@@ -127,7 +128,7 @@ pub async fn check_superadmin<B>(
     let mut conn = match pool.get() {
         Ok(connection) => connection,
         Err(e) => {
-            tracing::debug!("{}", e);
+            debug!("{}", e);
             return Err((
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({
@@ -145,7 +146,7 @@ pub async fn check_superadmin<B>(
     {
         Ok(e_user) => e_user,
         Err(e) => {
-            tracing::debug!("{}", e);
+            debug!("{}", e);
             return Err((
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({

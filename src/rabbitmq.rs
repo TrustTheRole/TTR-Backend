@@ -1,5 +1,6 @@
 use amiquip::{Connection, ConsumerMessage, ConsumerOptions, ExchangeDeclareOptions, QueueDeclareOptions};
 use axum::Json;
+use log::debug;
 use std::sync::Arc;
 
 use crate::handlers::insights::db_actions_for_insight_stat;
@@ -22,7 +23,7 @@ pub fn connect_to_rabbitmq(pool:Arc<diesel::r2d2::Pool<diesel::r2d2::ConnectionM
 
     let consumer = queue.consume(ConsumerOptions::default())?;
 
-    tracing::debug!("Connected to RabbitMQ");
+    debug!("Connected to RabbitMQ");
 
     for (i, message) in consumer.receiver().iter().enumerate() {
         match message {

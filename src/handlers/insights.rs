@@ -6,6 +6,7 @@ use diesel::{
     ExpressionMethods, RunQueryDsl,
 };
 use hyper::StatusCode;
+use log::debug;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::sync::Arc;
@@ -122,7 +123,7 @@ pub async fn create_insight(
         Some(i_tags) => match serde_json::from_value(i_tags.clone()) {
             Ok(vec_tags) => vec_tags,
             Err(e) => {
-                tracing::debug!("{:?}", e);
+                debug!("{:?}", e);
                 return (
                     StatusCode::BAD_REQUEST,
                     Json(json!({
@@ -146,7 +147,7 @@ pub async fn create_insight(
         Some(i_picture_urls) => match serde_json::from_value(i_picture_urls.clone()) {
             Ok(vec_pic_urls) => vec_pic_urls,
             Err(e) => {
-                tracing::debug!("{:?}", e);
+                debug!("{:?}", e);
                 return (
                     StatusCode::BAD_REQUEST,
                     Json(json!({
@@ -170,7 +171,7 @@ pub async fn create_insight(
         Some(i_focus_points) => match serde_json::from_value(i_focus_points.clone()) {
             Ok(vec_focus_points) => vec_focus_points,
             Err(e) => {
-                tracing::debug!("{:?}", e);
+                debug!("{:?}", e);
                 return (
                     StatusCode::BAD_REQUEST,
                     Json(json!({
@@ -201,7 +202,7 @@ pub async fn create_insight(
     let mut conn = match pool.get() {
         Ok(connection) => connection,
         Err(e) => {
-            tracing::debug!("{}", e);
+            debug!("{}", e);
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({
@@ -292,7 +293,7 @@ pub async fn get_all_insights(Extension(pool): Extension<Arc<DbPool>>) -> impl I
     let mut conn = match pool.get() {
         Ok(connection) => connection,
         Err(e) => {
-            tracing::debug!("{}", e);
+            debug!("{}", e);
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({
@@ -353,7 +354,7 @@ pub async fn get_recent_insights(
     let mut conn = match pool.get() {
         Ok(connection) => connection,
         Err(e) => {
-            tracing::debug!("{}", e);
+            debug!("{}", e);
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({
@@ -364,9 +365,11 @@ pub async fn get_recent_insights(
         }
     };
 
+    let limit_i64: i64 = limit.try_into().expect("limit conversion failed");
+
     let result = crate::schema::insights::dsl::insights
         .order(crate::schema::insights::dsl::created_at.desc())
-        .limit(limit as i64)
+        .limit(limit_i64)
         .load::<Insight>(&mut conn);
 
     if let Err(e) = result {
@@ -435,7 +438,7 @@ pub async fn get_insight_by_id(
     let mut conn = match pool.get() {
         Ok(connection) => connection,
         Err(e) => {
-            tracing::debug!("{}", e);
+            debug!("{}", e);
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({
@@ -500,7 +503,7 @@ pub async fn delete_insight(
     let mut conn = match pool.get() {
         Ok(connection) => connection,
         Err(e) => {
-            tracing::debug!("{}", e);
+            debug!("{}", e);
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({
@@ -592,7 +595,7 @@ pub async fn update_insight(
     let mut conn = match pool.get() {
         Ok(connection) => connection,
         Err(e) => {
-            tracing::debug!("{}", e);
+            debug!("{}", e);
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({
@@ -721,7 +724,7 @@ pub async fn disaprove(
     let mut conn = match pool.get() {
         Ok(connection) => connection,
         Err(e) => {
-            tracing::debug!("{}", e);
+            debug!("{}", e);
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({
@@ -1018,7 +1021,7 @@ pub fn db_actions_for_insight_stat(body: Json<Value>, pool: Arc<DbPool>) {
     let mut conn = match pool.get() {
         Ok(connection) => connection,
         Err(e) => {
-            tracing::debug!("{}", e);
+            debug!("{}", e);
             return;
         }
     };
@@ -1037,7 +1040,7 @@ pub fn db_actions_for_insight_stat(body: Json<Value>, pool: Arc<DbPool>) {
             {
                 Ok(e_user) => e_user,
                 Err(e) => {
-                    tracing::debug!("{}", e);
+                    debug!("{}", e);
                     return;
                 }
             };
@@ -1066,7 +1069,7 @@ pub fn db_actions_for_insight_stat(body: Json<Value>, pool: Arc<DbPool>) {
             {
                 Ok(e_user) => e_user,
                 Err(e) => {
-                    tracing::debug!("{}", e);
+                    debug!("{}", e);
                     return;
                 }
             };
@@ -1097,7 +1100,7 @@ pub fn db_actions_for_insight_stat(body: Json<Value>, pool: Arc<DbPool>) {
             {
                 Ok(e_user) => e_user,
                 Err(e) => {
-                    tracing::debug!("{}", e);
+                    debug!("{}", e);
                     return;
                 }
             };

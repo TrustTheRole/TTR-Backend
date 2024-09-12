@@ -29,13 +29,15 @@ pub struct Claims {
 
 pub fn generate_token(user_id: String) -> Result<String, Error> {
     let expiration = Utc::now()
-        .checked_add_signed(Duration::hours(24))
-        .expect("valid timestamp")
-        .timestamp() as usize;
+    .checked_add_signed(Duration::hours(24))
+    .expect("valid timestamp")
+    .timestamp();
+
+    let expiration_usize = expiration.try_into().expect("timestamp conversion failed");
 
     let claims = Claims {
         sub: user_id,
-        exp: expiration,
+        exp: expiration_usize,
     };
 
     let secret = env::var("SECRET_KEY").expect("SECRET_KEY must be set");

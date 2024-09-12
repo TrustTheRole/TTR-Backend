@@ -4,6 +4,7 @@ use axum::{http::Request, response::IntoResponse, Extension, Json};
 use diesel::OptionalExtension;
 use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl};
 use hyper::StatusCode;
+use log::debug;
 use serde_json::{json, Value};
 
 use crate::{
@@ -124,7 +125,7 @@ pub async fn register(
         .get("role")
         .and_then(|v| v.as_str().map(|s| s.to_string()));
 
-    tracing::debug!("{:?}", user_graduation_year);
+    debug!("{:?}", user_graduation_year);
 
     let _user_id = get_uid();
 
@@ -147,7 +148,7 @@ pub async fn register(
     let mut conn = match pool.get() {
         Ok(connection) => connection,
         Err(e) => {
-            tracing::debug!("{}", e);
+            debug!("{}", e);
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({
@@ -183,7 +184,7 @@ pub async fn register(
                     .into_response();
             }
             Err(e) => {
-                tracing::debug!("{}", e);
+                debug!("{}", e);
                 return (
                     StatusCode::INTERNAL_SERVER_ERROR,
                     Json(json!({
@@ -209,7 +210,7 @@ pub async fn register(
     let token = generate_token(_user_id);
 
     if let Err(e) = token {
-        tracing::debug!("{}", e);
+        debug!("{}", e);
         return (
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(json!({
@@ -296,7 +297,7 @@ pub async fn get_user(
     let mut conn = match pool.get() {
         Ok(connection) => connection,
         Err(e) => {
-            tracing::debug!("{}", e);
+            debug!("{}", e);
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({
@@ -313,7 +314,7 @@ pub async fn get_user(
     {
         Ok(e_user) => e_user,
         Err(e) => {
-            tracing::debug!("{}", e);
+            debug!("{}", e);
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({
@@ -340,7 +341,7 @@ pub async fn check_user<B>(
     let mut conn = match pool.get() {
         Ok(connection) => connection,
         Err(e) => {
-            tracing::debug!("{}", e);
+            debug!("{}", e);
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({
@@ -366,7 +367,7 @@ pub async fn check_user<B>(
     let user_email = match user_email.to_str() {
         Ok(u_mail) => u_mail,
         Err(e) => {
-            tracing::debug!("{}", e);
+            debug!("{}", e);
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({
@@ -380,7 +381,7 @@ pub async fn check_user<B>(
         .filter(email.eq(&user_email))
         .first::<User>(&mut conn)
     {
-        tracing::debug!("{}", e);
+        debug!("{}", e);
         return (
             StatusCode::OK,
             Json(json!({
@@ -430,7 +431,7 @@ pub async fn authenticate(
     let mut conn = match pool.get() {
         Ok(connection) => connection,
         Err(e) => {
-            tracing::debug!("{}", e);
+            debug!("{}", e);
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({
@@ -447,7 +448,7 @@ pub async fn authenticate(
     {
         Ok(e_user) => e_user,
         Err(e) => {
-            tracing::debug!("{}", e);
+            debug!("{}", e);
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({
@@ -458,12 +459,12 @@ pub async fn authenticate(
         }
     };
 
-    tracing::debug!("existing user = {:?}", existing_user);
+    debug!("existing user = {:?}", existing_user);
 
     let token = generate_token(existing_user.user_id.clone());
 
     if let Err(e) = token {
-        tracing::debug!("{}", e);
+        debug!("{}", e);
         return (
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(json!({
@@ -494,7 +495,7 @@ pub async fn update_user_details(
     let mut conn = match pool.get() {
         Ok(connection) => connection,
         Err(e) => {
-            tracing::debug!("{}", e);
+            debug!("{}", e);
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({
@@ -511,7 +512,7 @@ pub async fn update_user_details(
     {
         Ok(e_user) => e_user,
         Err(e) => {
-            tracing::debug!("{}", e);
+            debug!("{}", e);
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({
@@ -531,7 +532,7 @@ pub async fn update_user_details(
         graduation_year: req
             .get("graduation_year")
             .and_then(|v| v.as_i64())
-            .map(|y| y as i32),
+            .and_then(|y| y.try_into().ok()),
         linkedin: req.get("linkedin").and_then(|v| v.as_str()),
         github: req.get("github").and_then(|v| v.as_str()),
         gender: req.get("gender").and_then(|v| v.as_str()),
@@ -547,7 +548,7 @@ pub async fn update_user_details(
         )
             .into_response(),
         Err(e) => {
-            tracing::debug!("{}", e);
+            debug!("{}", e);
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({
@@ -563,7 +564,7 @@ pub async fn get_all_users(Extension(pool): Extension<Arc<DbPool>>) -> impl Into
     let mut conn = match pool.get() {
         Ok(connection) => connection,
         Err(e) => {
-            tracing::debug!("{}", e);
+            debug!("{}", e);
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({
@@ -584,7 +585,7 @@ pub async fn get_all_users(Extension(pool): Extension<Arc<DbPool>>) -> impl Into
         )
             .into_response(),
         Err(e) => {
-            tracing::debug!("{}", e);
+            debug!("{}", e);
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({
